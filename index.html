@@ -1,4949 +1,3017 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-    <title>E-Waste EPR Platform</title>
-
-    <style>
-        :root {
-            --bg: #07110d;
-            --card: #0e1d16;
-            --card2: #12251c;
-            --line: #244635;
-            --text: #edf8f1;
-            --muted: #9eb7a8;
-            --accent: #55e68b;
-            --accent2: #1fcf72;
-            --danger: #ff7373;
-            --warning: #ffd166;
-            --blue: #66b3ff;
-        }
-
-        * {
-            box-sizing: border-box;
-        }
-
-        body {
-            margin: 0;
-            min-height: 100vh;
-            font-family: Inter, system-ui, Arial, sans-serif;
-            color: var(--text);
-            background:
-                radial-gradient(
-                    circle at top,
-                    #123321 0,
-                    #07110d 45%,
-                    #040907 100%
-                );
-        }
-
-        button,
-        input,
-        select {
-            font: inherit;
-        }
-
-        button {
-            cursor: pointer;
-        }
-
-        .hidden {
-            display: none !important;
-        }
-
-        .container {
-            width: min(1180px, 94%);
-            margin: auto;
-        }
-
-        /* ================= HEADER ================= */
-
-        header {
-            position: sticky;
-            top: 0;
-            z-index: 100;
-            background: rgba(4, 9, 7, 0.9);
-            backdrop-filter: blur(14px);
-            border-bottom: 1px solid var(--line);
-        }
-
-        .nav {
-            min-height: 68px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 12px;
-        }
-
-        .logo {
-            font-size: 19px;
-            font-weight: 900;
-            letter-spacing: 0.5px;
-        }
-
-        .logo span {
-            color: var(--accent);
-        }
-
-        .nav-right {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            flex-wrap: wrap;
-            justify-content: flex-end;
-        }
-
-        .badge {
-            padding: 7px 11px;
-            border: 1px solid var(--line);
-            border-radius: 999px;
-            background: #0d1b14;
-            color: var(--muted);
-            font-size: 12px;
-        }
-
-        /* ================= MAIN ================= */
-
-        main {
-            padding: 30px 0 70px;
-        }
-
-        .hero {
-            padding: 30px 0 24px;
-            text-align: center;
-        }
-
-        .hero h1 {
-            margin: 0 0 12px;
-            font-size: clamp(32px, 6vw, 58px);
-            line-height: 1.05;
-        }
-
-        .hero h1 span {
-            color: var(--accent);
-        }
-
-        .hero p {
-            max-width: 750px;
-            margin: auto;
-            color: var(--muted);
-            line-height: 1.6;
-        }
-
-        /* ================= PANELS ================= */
-
-        .panel {
-            padding: 22px;
-            background: rgba(14, 29, 22, 0.9);
-            border: 1px solid var(--line);
-            border-radius: 20px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.18);
-        }
-
-        .grid {
-            display: grid;
-            gap: 16px;
-        }
-
-        .grid-2 {
-            grid-template-columns:
-                repeat(auto-fit, minmax(280px, 1fr));
-        }
-
-        .grid-3 {
-            grid-template-columns:
-                repeat(auto-fit, minmax(210px, 1fr));
-        }
-
-        .grid-4 {
-            grid-template-columns:
-                repeat(auto-fit, minmax(160px, 1fr));
-        }
-
-        .center {
-            text-align: center;
-        }
-
-        h1,
-        h2,
-        h3 {
-            margin-top: 0;
-        }
-
-        /* ================= BUTTONS ================= */
-
-        .btn {
-            border: 0;
-            border-radius: 12px;
-            padding: 11px 15px;
-            background: var(--accent2);
-            color: #031008;
-            font-weight: 800;
-            transition: 0.2s;
-        }
-
-        .btn:hover {
-            transform: translateY(-1px);
-        }
-
-        .btn.secondary {
-            color: var(--text);
-            background: #173025;
-            border: 1px solid var(--line);
-        }
-
-        .btn.danger {
-            color: #fff;
-            background: #4b1d1d;
-            border: 1px solid #7e3434;
-        }
-
-        .btn.warn {
-            color: #fff;
-            background: #594718;
-        }
-
-        .btn:disabled {
-            opacity: 0.45;
-            cursor: not-allowed;
-        }
-
-        /* ================= FORMS ================= */
-
-        label {
-            display: block;
-            margin-bottom: 7px;
-            color: var(--muted);
-            font-size: 13px;
-        }
-
-        input,
-        select {
-            width: 100%;
-            padding: 12px;
-            color: var(--text);
-            background: #09150f;
-            border: 1px solid var(--line);
-            border-radius: 11px;
-            outline: none;
-        }
-
-        input:focus,
-        select:focus {
-            border-color: var(--accent);
-        }
-
-        .field {
-            margin-bottom: 14px;
-        }
-
-        /* ================= ROLE CARDS ================= */
-
-        .role-card {
-            padding: 18px;
-            color: var(--text);
-            text-align: left;
-            background: #0b1812;
-            border: 1px solid var(--line);
-            border-radius: 16px;
-            transition: 0.2s;
-        }
-
-        .role-card:hover {
-            transform: translateY(-3px);
-            border-color: var(--accent);
-        }
-
-        .role-icon {
-            font-size: 30px;
-        }
-
-        .role-card h3 {
-            margin: 8px 0;
-        }
-
-        .role-card p {
-            margin: 0;
-            color: var(--muted);
-            font-size: 13px;
-            line-height: 1.45;
-        }
-
-        /* ================= STATS ================= */
-
-        .stat {
-            padding: 17px;
-            background: #0a1710;
-            border: 1px solid var(--line);
-            border-radius: 15px;
-        }
-
-        .stat .num {
-            margin-top: 7px;
-            font-size: 27px;
-            font-weight: 900;
-        }
-
-        .stat .lbl {
-            color: var(--muted);
-            font-size: 12px;
-        }
-
-        /* ================= COMMON ================= */
-
-        .topline {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 10px;
-            flex-wrap: wrap;
-            margin-bottom: 18px;
-        }
-
-        .small {
-            color: var(--muted);
-            font-size: 12px;
-        }
-
-        .notice {
-            margin-bottom: 14px;
-            padding: 12px 14px;
-            color: #bcefcf;
-            background: #112a1d;
-            border: 1px solid #2a6846;
-            border-radius: 12px;
-        }
-
-        .error {
-            color: #ffc0c0;
-            background: #391919;
-            border: 1px solid #743636;
-        }
-
-        .success {
-            color: #bff4d1;
-            background: #12311f;
-            border: 1px solid #2d784e;
-        }
-
-        /* ================= TABLES ================= */
-
-        .table-wrap {
-            overflow-x: auto;
-            border: 1px solid var(--line);
-            border-radius: 14px;
-        }
-
-        table {
-            width: 100%;
-            min-width: 650px;
-            border-collapse: collapse;
-        }
-
-        th,
-        td {
-            padding: 11px;
-            text-align: left;
-            font-size: 13px;
-            border-bottom: 1px solid var(--line);
-        }
-
-        th {
-            color: var(--muted);
-        }
-
-        .status {
-            display: inline-block;
-            padding: 5px 8px;
-            color: var(--accent);
-            background: #173025;
-            border-radius: 999px;
-            font-size: 11px;
-            font-weight: 800;
-        }
-
-        .status.warn {
-            color: var(--warning);
-            background: #443914;
-        }
-
-        .status.bad {
-            color: #ff9292;
-            background: #431b1b;
-        }
-
-        /* ================= CHAIN ================= */
-
-        .chain {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            flex-wrap: wrap;
-            margin: 20px 0;
-        }
-
-        .node {
-            padding: 12px 15px;
-            font-size: 12px;
-            font-weight: 800;
-            background: #0a1710;
-            border: 1px solid var(--line);
-            border-radius: 12px;
-        }
-
-        .arrow {
-            color: var(--accent);
-            font-weight: 900;
-        }
-
-        /* ================= PROGRESS ================= */
-
-        .progress {
-            height: 12px;
-            overflow: hidden;
-            background: #17251d;
-            border-radius: 99px;
-        }
-
-        .progress div {
-            width: 0;
-            height: 100%;
-            background: var(--accent2);
-            transition: width 0.5s ease;
-        }
-
-        /* ================= ADMIN TABS ================= */
-
-        .tabs {
-            display: flex;
-            gap: 7px;
-            flex-wrap: wrap;
-            margin-bottom: 18px;
-        }
-
-        .tab {
-            padding: 9px 12px;
-            color: var(--muted);
-            background: #0a1710;
-            border: 1px solid var(--line);
-            border-radius: 10px;
-        }
-
-        .tab.active {
-            color: #06100a;
-            background: var(--accent);
-            font-weight: 900;
-        }
-
-        /* ================= TOAST ================= */
-
-        .toast {
-            position: fixed;
-            right: 18px;
-            bottom: 18px;
-            z-index: 500;
-            max-width: 380px;
-            padding: 14px 16px;
-            color: #dfffea;
-            background: #10281b;
-            border: 1px solid #347b51;
-            border-radius: 13px;
-            box-shadow: 0 15px 40px #0008;
-        }
-
-        .toast.error {
-            color: #ffd0d0;
-            background: #391919;
-            border-color: #743636;
-        }
-
-        footer {
-            padding: 20px;
-            color: var(--muted);
-            text-align: center;
-            font-size: 12px;
-        }
-
-        /* ================= MOBILE ================= */
-
-        @media (max-width: 650px) {
-
-            .nav {
-                min-height: auto;
-                padding: 12px 0;
-            }
-
-            .hero {
-                padding-top: 15px;
-            }
-
-            .panel {
-                padding: 16px;
-            }
-
-            .nav-right {
-                gap: 5px;
-            }
-        }
-    </style>
-</head>
-
-<body>
-
-<header>
-    <div class="container nav">
-
-        <div class="logo">
-            ♻️ E-Waste <span>EPR</span>
-        </div>
-
-        <div class="nav-right">
-
-            <span
-                id="userBadge"
-                class="badge hidden">
-            </span>
-
-            <span
-                id="onlineBadge"
-                class="badge">
-                ● Online
-            </span>
-
-            <button
-                id="refreshBtn"
-                class="btn secondary hidden"
-                onclick="refreshDashboard()">
-                ↻
-            </button>
-
-            <button
-                id="logoutBtn"
-                class="btn secondary hidden"
-                onclick="logout()">
-                Logout
-            </button>
-
-        </div>
-    </div>
-</header>
-
-
-<main class="container">
-
-    <!-- ======================================================
-         LANGUAGE SCREEN
-    ======================================================= -->
-
-    <section id="languageScreen">
-
-        <div class="hero">
-
-            <h1>
-                <span>E-Waste</span> EPR Platform
-            </h1>
-
-            <p>
-                Offline-first digital platform connecting
-                informal e-waste collection to auditable
-                EPR compliance.
-            </p>
-
-        </div>
-
-        <div class="panel center">
-
-            <h2>
-                Choose your language
-            </h2>
-
-            <div
-                class="grid grid-3"
-                style="margin-top:18px">
-
-                <button
-                    class="btn secondary"
-                    onclick="selectLanguage('en')">
-                    English
-                </button>
-
-                <button
-                    class="btn secondary"
-                    onclick="selectLanguage('hi')">
-                    हिन्दी
-                </button>
-
-                <button
-                    class="btn secondary"
-                    onclick="selectLanguage('ta')">
-                    தமிழ்
-                </button>
-
-                <button
-                    class="btn secondary"
-                    onclick="selectLanguage('te')">
-                    తెలుగు
-                </button>
-
-                <button
-                    class="btn secondary"
-                    onclick="selectLanguage('kn')">
-                    ಕನ್ನಡ
-                </button>
-
-                <button
-                    class="btn secondary"
-                    onclick="selectLanguage('ml')">
-                    മലയാളം
-                </button>
-
-                <button
-                    class="btn secondary"
-                    onclick="selectLanguage('bn')">
-                    বাংলা
-                </button>
-
-                <button
-                    class="btn secondary"
-                    onclick="selectLanguage('mr')">
-                    मराठी
-                </button>
-
-                <button
-                    class="btn secondary"
-                    onclick="selectLanguage('gu')">
-                    ગુજરાતી
-                </button>
-
-                <button
-                    class="btn secondary"
-                    onclick="selectLanguage('pa')">
-                    ਪੰਜਾਬੀ
-                </button>
-
-                <button
-                    class="btn secondary"
-                    onclick="selectLanguage('or')">
-                    ଓଡ଼ିଆ
-                </button>
-
-                <button
-                    class="btn secondary"
-                    onclick="selectLanguage('as')">
-                    অসমীয়া
-                </button>
-
-                <button
-                    class="btn secondary"
-                    onclick="selectLanguage('ur')">
-                    اردو
-                </button>
-
-            </div>
-        </div>
-
-    </section>
-
-
-    <!-- ======================================================
-         ROLE SCREEN
-    ======================================================= -->
-
-    <section
-        id="roleScreen"
-        class="hidden">
-
-        <div class="hero">
-
-            <h1>
-                Choose your role
-            </h1>
-
-            <p>
-                Select the role assigned to your official demo ID.
-            </p>
-
-        </div>
-
-        <div
-            id="roleGrid"
-            class="grid grid-3">
-        </div>
-
-    </section>
-
-
-    <!-- ======================================================
-         LOGIN SCREEN
-    ======================================================= -->
-
-    <section
-        id="loginScreen"
-        class="hidden">
-
-        <div
-            class="panel"
-            style="max-width:520px;margin:25px auto">
-
-            <div class="topline">
-
-                <h2 id="loginTitle">
-                    Verify Identity
-                </h2>
-
-                <button
-                    class="btn secondary"
-                    onclick="showScreen('roleScreen')">
-                    Back
-                </button>
-
-            </div>
-
-            <div class="notice">
-
-                <b>Demo IDs</b>:
-
-                <br><br>
-
-                CUS-1001 ·
-                COL-2001 ·
-                AGG-3001 ·
-                REC-4001 ·
-                BRD-5001 ·
-                ADM-0001
-
-            </div>
-
-            <div class="field">
-
-                <label>
-                    Official ID
-                </label>
-
-                <input
-                    id="loginId"
-                    placeholder="Example: COL-2001"
-                    autocomplete="off">
-
-            </div>
-
-            <button
-                class="btn"
-                style="width:100%"
-                onclick="login()">
-
-                Verify ID & Continue
-
-            </button>
-
-            <p
-                id="loginError"
-                class="small"
-                style="margin-top:12px">
-            </p>
-
-        </div>
-
-    </section>
-
-
-    <!-- ======================================================
-         APPLICATION SCREEN
-    ======================================================= -->
-
-    <section
-        id="appScreen"
-        class="hidden">
-
-        <div class="topline">
-
-            <div>
-
-                <h1
-                    id="dashTitle"
-                    style="margin-bottom:5px">
-                    Dashboard
-                </h1>
-
-                <div
-                    id="dashSub"
-                    class="small">
-                </div>
-
-            </div>
-
-        </div>
-
-        <div id="dashboardContent"></div>
-
-    </section>
-
-</main>
-
-
-<div
-    id="toast"
-    class="toast hidden">
-</div>
-
-
-<footer>
-    Prototype • EPR quantity and reward points are separate •
-    No real money transfer
-</footer>
-
-
-<script>
-
-/* ============================================================
-   TRANSLATIONS
-============================================================ */
-
-const TRANSLATIONS = {
-
-    en: {
-
-        tagline:
-            "Offline-first digital platform connecting informal e-waste collection to auditable EPR compliance.",
-
-        chooseLanguage:
-            "Choose your language",
-
-        chooseRole:
-            "Choose your role",
-
-        roleHelp:
-            "Select the role assigned to your official demo ID.",
-
-        verifyIdentity:
-            "Verify Identity",
-
-        officialId:
-            "Official ID",
-
-        verifyId:
-            "Verify ID & Continue",
-
-        back:
-            "Back",
-
-        logout:
-            "Logout",
-
-        demoIds:
-            "Demo IDs",
-
-        dashboard:
-            "Dashboard",
-
-        customer:
-            "Customer",
-
-        collector:
-            "Collector",
-
-        aggregator:
-            "Aggregator",
-
-        recycler:
-            "Recycler",
-
-        brand:
-            "Brand / PRO",
-
-        admin:
-            "Admin / Supervisor",
-
-        customerDesc:
-            "Hand over e-waste and earn reward points after verified recycling.",
-
-        collectorDesc:
-            "Collect e-waste with voice, photo and GPS-assisted logging.",
-
-        aggregatorDesc:
-            "Verify pickup weight and move material to the recycler.",
-
-        recyclerDesc:
-            "Confirm final received weight and trigger verified EPR generation.",
-
-        brandDesc:
-            "Track verified EPR quantity against a demo obligation.",
-
-        adminDesc:
-            "Supervise users, anomalies, audit logs and withdrawals.",
-
-        systemOverview:
-            "System Overview",
-
-        totalUsers:
-            "Total Users",
-
-        totalHandovers:
-            "Total Handovers",
-
-        totalCollections:
-            "Total Collections",
-
-        verifiedCollections:
-            "Verified Collections",
-
-        verifiedWeight:
-            "Verified EPR Weight",
-
-        openAnomalies:
-            "Open Anomalies",
-
-        pendingWithdrawals:
-            "Pending Withdrawals",
-
-        rewardPoints:
-            "Reward Points",
-
-        cashBalance:
-            "Cash Balance",
-
-        rewards:
-            "My Rewards",
-
-        withdraw:
-            "Withdraw",
+import os
+import uuid
+import hashlib
+from datetime import datetime, timezone
+from functools import wraps
 
-        transactions:
-            "Transactions",
+import psycopg2
+from psycopg2.extras import RealDictCursor
+from flask import Flask, jsonify, request, send_from_directory
+from flask_cors import CORS
+from werkzeug.security import generate_password_hash, check_password_hash
+import jwt
 
-        handover:
-            "Customer Handover",
-
-        phone:
-            "Phone",
-
-        location:
-            "Location",
-
-        product:
-            "E-Waste Product",
-
-        weight:
-            "Approx. Weight (kg)",
-
-        collectorId:
-            "Collector ID",
-
-        serial:
-            "Serial / IMEI (optional)",
-
-        createHandover:
-            "Create Handover",
-
-        collection:
-            "Collection",
-
-        handoverId:
-            "Handover ID",
-
-        capture:
-            "Photo / Image Hash",
-
-        gps:
-            "GPS Location",
-
-        submit:
-            "Submit Collection",
-
-        voice:
-            "Voice Logging",
-
-        verifyCollection:
-            "Verify Collection",
-
-        verifiedWeightInput:
-            "Verified Weight (kg)",
-
-        confirmReceipt:
-            "Confirm Receipt",
-
-        finalWeight:
-            "Final Recycler Weight (kg)",
-
-        eprCompliance:
-            "EPR Compliance",
-
-        eprObligation:
-            "EPR Obligation",
-
-        verifiedEPR:
-            "Verified EPR",
-
-        remaining:
-            "Remaining",
-
-        compliance:
-            "Compliance",
-
-        withdrawalHistory:
-            "Withdrawal History",
-
-        upi:
-            "UPI ID (demo)",
-
-        pointsToWithdraw:
-            "Points to Withdraw",
-
-        requestWithdrawal:
-            "Request Withdrawal",
-
-        minimumWithdrawal:
-            "Minimum withdrawal: 100 points",
-
-        noRecords:
-            "No records yet.",
-
-        users:
-            "Users",
-
-        anomalies:
-            "Anomalies",
-
-        audit:
-            "Audit Trail",
-
-        approve:
-            "Approve",
-
-        reject:
-            "Reject",
-
-        resolve:
-            "Resolve",
-
-        toggle:
-            "Activate / Deactivate",
-
-        status:
-            "Status",
-
-        action:
-            "Action",
-
-        active:
-            "Active",
-
-        inactive:
-            "Inactive",
-
-        pending:
-            "Pending",
-
-        approved:
-            "Approved",
-
-        rejected:
-            "Rejected",
-
-        chain:
-            "Verified Chain",
-
-        demoNotice:
-            "Demo data only. Brand obligation is fictional.",
-
-        noRealMoney:
-            "No real payment is transferred. Withdrawal is a prototype ledger."
-    },
-
-
-    hi: {
-
-        tagline:
-            "अनौपचारिक ई-कचरा संग्रह को ऑडिट योग्य EPR अनुपालन से जोड़ने वाला ऑफलाइन-फर्स्ट प्लेटफॉर्म।",
-
-        chooseLanguage:
-            "भाषा चुनें",
-
-        chooseRole:
-            "अपनी भूमिका चुनें",
-
-        roleHelp:
-            "अपने आधिकारिक डेमो ID की भूमिका चुनें।",
-
-        verifyIdentity:
-            "पहचान सत्यापित करें",
-
-        officialId:
-            "आधिकारिक ID",
-
-        verifyId:
-            "ID सत्यापित करें और आगे बढ़ें",
-
-        back:
-            "वापस",
-
-        logout:
-            "लॉगआउट",
-
-        demoIds:
-            "डेमो IDs",
-
-        dashboard:
-            "डैशबोर्ड",
-
-        customer:
-            "ग्राहक",
-
-        collector:
-            "कलेक्टर",
-
-        aggregator:
-            "एग्रीगेटर",
-
-        recycler:
-            "रीसाइकलर",
-
-        brand:
-            "ब्रांड / PRO",
-
-        admin:
-            "एडमिन / सुपरवाइज़र",
-
-        customerDesc:
-            "ई-कचरा दें और सत्यापित रीसाइक्लिंग के बाद रिवॉर्ड पॉइंट कमाएँ।",
-
-        collectorDesc:
-            "वॉइस, फोटो और GPS से ई-कचरा संग्रह दर्ज करें।",
-
-        aggregatorDesc:
-            "पिकअप वजन सत्यापित करें और सामग्री रीसाइकलर तक भेजें।",
-
-        recyclerDesc:
-            "अंतिम वजन की पुष्टि करें और सत्यापित EPR रिकॉर्ड बनाएँ।",
-
-        brandDesc:
-            "डेमो EPR लक्ष्य के मुकाबले सत्यापित मात्रा देखें।",
-
-        adminDesc:
-            "यूज़र, विसंगतियाँ, ऑडिट और निकासी अनुरोध देखें।",
-
-        systemOverview:
-            "सिस्टम अवलोकन",
-
-        totalUsers:
-            "कुल यूज़र",
-
-        totalHandovers:
-            "कुल हैंडओवर",
-
-        totalCollections:
-            "कुल संग्रह",
-
-        verifiedCollections:
-            "सत्यापित संग्रह",
-
-        verifiedWeight:
-            "सत्यापित EPR वजन",
-
-        openAnomalies:
-            "खुली विसंगतियाँ",
-
-        pendingWithdrawals:
-            "लंबित निकासी",
-
-        rewardPoints:
-            "रिवॉर्ड पॉइंट",
-
-        cashBalance:
-            "कैश बैलेंस",
-
-        rewards:
-            "मेरे रिवॉर्ड",
-
-        withdraw:
-            "निकासी",
-
-        transactions:
-            "लेनदेन",
-
-        handover:
-            "ग्राहक हैंडओवर",
-
-        phone:
-            "फोन",
-
-        location:
-            "स्थान",
-
-        product:
-            "ई-कचरा उत्पाद",
-
-        weight:
-            "अनुमानित वजन (किग्रा)",
-
-        collectorId:
-            "कलेक्टर ID",
-
-        serial:
-            "सीरियल / IMEI (वैकल्पिक)",
-
-        createHandover:
-            "हैंडओवर बनाएँ",
-
-        collection:
-            "संग्रह",
-
-        handoverId:
-            "हैंडओवर ID",
-
-        capture:
-            "फोटो / इमेज हैश",
-
-        gps:
-            "GPS स्थान",
-
-        submit:
-            "संग्रह जमा करें",
-
-        voice:
-            "वॉइस लॉगिंग",
-
-        verifyCollection:
-            "संग्रह सत्यापित करें",
-
-        verifiedWeightInput:
-            "सत्यापित वजन (किग्रा)",
-
-        confirmReceipt:
-            "प्राप्ति की पुष्टि करें",
-
-        finalWeight:
-            "अंतिम रीसाइकलर वजन (किग्रा)",
-
-        eprCompliance:
-            "EPR अनुपालन",
-
-        eprObligation:
-            "EPR लक्ष्य",
-
-        verifiedEPR:
-            "सत्यापित EPR",
-
-        remaining:
-            "शेष",
-
-        compliance:
-            "अनुपालन",
-
-        withdrawalHistory:
-            "निकासी इतिहास",
-
-        upi:
-            "UPI ID (डेमो)",
-
-        pointsToWithdraw:
-            "निकासी पॉइंट",
-
-        requestWithdrawal:
-            "निकासी अनुरोध",
-
-        minimumWithdrawal:
-            "न्यूनतम निकासी: 100 पॉइंट",
-
-        noRecords:
-            "अभी कोई रिकॉर्ड नहीं।",
-
-        users:
-            "यूज़र",
-
-        anomalies:
-            "विसंगतियाँ",
-
-        audit:
-            "ऑडिट ट्रेल",
-
-        approve:
-            "स्वीकृत करें",
-
-        reject:
-            "अस्वीकार करें",
-
-        resolve:
-            "समाधान करें",
-
-        toggle:
-            "सक्रिय / निष्क्रिय",
-
-        status:
-            "स्थिति",
-
-        action:
-            "कार्रवाई",
-
-        active:
-            "सक्रिय",
-
-        inactive:
-            "निष्क्रिय",
-
-        pending:
-            "लंबित",
-
-        approved:
-            "स्वीकृत",
-
-        rejected:
-            "अस्वीकृत",
-
-        chain:
-            "सत्यापित श्रृंखला",
-
-        demoNotice:
-            "केवल डेमो डेटा। ब्रांड लक्ष्य काल्पनिक है।",
-
-        noRealMoney:
-            "वास्तविक भुगतान नहीं होता। निकासी केवल प्रोटोटाइप लेजर है।"
-    },
-
-
-    ta: {
-
-        tagline:
-            "முறைசாரா மின்-கழிவு சேகரிப்பை கண்காணிக்கக்கூடிய EPR இணக்கத்துடன் இணைக்கும் offline-first தளம்.",
-
-        chooseLanguage:
-            "மொழியைத் தேர்வு செய்யவும்",
-
-        chooseRole:
-            "உங்கள் பங்கைத் தேர்வு செய்யவும்",
-
-        roleHelp:
-            "உங்கள் அதிகாரப்பூர்வ demo ID-க்கு பொருந்தும் பங்கைத் தேர்வு செய்யவும்.",
-
-        verifyIdentity:
-            "அடையாளத்தைச் சரிபார்க்கவும்",
-
-        officialId:
-            "அதிகாரப்பூர்வ ID",
-
-        verifyId:
-            "ID-ஐ சரிபார்த்து தொடரவும்",
-
-        back:
-            "பின்செல்",
-
-        logout:
-            "வெளியேறு",
-
-        demoIds:
-            "Demo IDs",
-
-        dashboard:
-            "டாஷ்போர்டு",
-
-        customer:
-            "வாடிக்கையாளர்",
-
-        collector:
-            "சேகரிப்பாளர்",
-
-        aggregator:
-            "ஒருங்கிணைப்பாளர்",
-
-        recycler:
-            "மறுசுழற்சியாளர்",
-
-        brand:
-            "Brand / PRO",
-
-        admin:
-            "நிர்வாகி / மேற்பார்வையாளர்",
-
-        customerDesc:
-            "மின்-கழிவை ஒப்படைத்து, சரிபார்க்கப்பட்ட மறுசுழற்சிக்குப் பிறகு புள்ளிகள் பெறுங்கள்.",
-
-        collectorDesc:
-            "குரல், புகைப்படம் மற்றும் GPS மூலம் சேகரிப்பைப் பதிவு செய்யுங்கள்.",
-
-        aggregatorDesc:
-            "எடையைச் சரிபார்த்து பொருளை மறுசுழற்சியாளரிடம் அனுப்புங்கள்.",
-
-        recyclerDesc:
-            "இறுதி எடையை உறுதிசெய்து சரிபார்க்கப்பட்ட EPR பதிவை உருவாக்குங்கள்.",
-
-        brandDesc:
-            "Demo EPR இலக்கிற்கு எதிரான சரிபார்க்கப்பட்ட அளவைப் பாருங்கள்.",
-
-        adminDesc:
-            "பயனர்கள், முரண்பாடுகள், audit மற்றும் withdrawal-களை மேற்பார்வையிடுங்கள்.",
-
-        systemOverview:
-            "கணினி சுருக்கம்",
-
-        totalUsers:
-            "மொத்த பயனர்கள்",
-
-        totalHandovers:
-            "மொத்த ஒப்படைப்புகள்",
-
-        totalCollections:
-            "மொத்த சேகரிப்புகள்",
-
-        verifiedCollections:
-            "சரிபார்க்கப்பட்ட சேகரிப்புகள்",
-
-        verifiedWeight:
-            "சரிபார்க்கப்பட்ட EPR எடை",
-
-        openAnomalies:
-            "திறந்த முரண்பாடுகள்",
-
-        pendingWithdrawals:
-            "நிலுவை withdrawal-கள்",
-
-        rewardPoints:
-            "Reward Points",
-
-        cashBalance:
-            "Cash Balance",
-
-        rewards:
-            "என் Rewards",
-
-        withdraw:
-            "Withdraw",
-
-        transactions:
-            "பரிவர்த்தனைகள்",
-
-        handover:
-            "வாடிக்கையாளர் ஒப்படைப்பு",
-
-        phone:
-            "தொலைபேசி",
-
-        location:
-            "இடம்",
-
-        product:
-            "மின்-கழிவு பொருள்",
-
-        weight:
-            "மதிப்பிடப்பட்ட எடை (kg)",
-
-        collectorId:
-            "சேகரிப்பாளர் ID",
-
-        serial:
-            "Serial / IMEI (விருப்பம்)",
-
-        createHandover:
-            "ஒப்படைப்பை உருவாக்கவும்",
-
-        collection:
-            "சேகரிப்பு",
-
-        handoverId:
-            "ஒப்படைப்பு ID",
-
-        capture:
-            "புகைப்படம் / Image Hash",
-
-        gps:
-            "GPS இடம்",
-
-        submit:
-            "சேகரிப்பை சமர்ப்பிக்கவும்",
-
-        voice:
-            "குரல் பதிவு",
-
-        verifyCollection:
-            "சேகரிப்பை சரிபார்க்கவும்",
-
-        verifiedWeightInput:
-            "சரிபார்க்கப்பட்ட எடை (kg)",
-
-        confirmReceipt:
-            "பெறுதலை உறுதிசெய்யவும்",
-
-        finalWeight:
-            "இறுதி மறுசுழற்சி எடை (kg)",
-
-        eprCompliance:
-            "EPR இணக்கம்",
-
-        eprObligation:
-            "EPR இலக்கு",
-
-        verifiedEPR:
-            "சரிபார்க்கப்பட்ட EPR",
-
-        remaining:
-            "மீதம்",
-
-        compliance:
-            "இணக்கம்",
-
-        withdrawalHistory:
-            "Withdrawal வரலாறு",
-
-        upi:
-            "UPI ID (demo)",
-
-        pointsToWithdraw:
-            "Withdrawal Points",
-
-        requestWithdrawal:
-            "Withdrawal கோரிக்கை",
-
-        minimumWithdrawal:
-            "குறைந்தபட்ச withdrawal: 100 points",
-
-        noRecords:
-            "பதிவுகள் இல்லை.",
-
-        users:
-            "பயனர்கள்",
-
-        anomalies:
-            "முரண்பாடுகள்",
-
-        audit:
-            "Audit Trail",
-
-        approve:
-            "ஒப்புதல்",
-
-        reject:
-            "நிராகரிப்பு",
-
-        resolve:
-            "தீர்வு",
-
-        toggle:
-            "செயல்படுத்து / செயலிழக்கச் செய்",
-
-        status:
-            "நிலை",
-
-        action:
-            "செயல்",
-
-        active:
-            "செயலில்",
-
-        inactive:
-            "செயலற்ற",
-
-        pending:
-            "நிலுவை",
-
-        approved:
-            "ஒப்புதல்",
-
-        rejected:
-            "நிராகரிக்கப்பட்டது",
-
-        chain:
-            "சரிபார்க்கப்பட்ட சங்கிலி",
-
-        demoNotice:
-            "Demo தரவு மட்டும். Brand இலக்கு கற்பனையானது.",
-
-        noRealMoney:
-            "உண்மையான பணம் செலுத்தப்படாது. Withdrawal prototype ledger மட்டுமே."
+
+# ============================================================
+# E-WASTE EPR PLATFORM
+# Flask + PostgreSQL + psycopg2
+# NO SQLAlchemy
+# ============================================================
+
+app = Flask(__name__, static_folder="frontend", static_url_path="/")
+CORS(app)
+
+app.config["SECRET_KEY"] = os.getenv("JWT_SECRET_KEY", "CHANGE_THIS_SECRET")
+DATABASE_URL = os.getenv("DATABASE_URL")
+
+DEMO_BRAND = "ECOGEN Electronics"
+DEMO_EPR_OBLIGATION = 10000.0
+
+CUSTOMER_POINTS_PER_KG = 5
+COLLECTOR_POINTS_PER_KG = 10
+
+WEIGHT_TOLERANCE = 0.20
+
+
+# ============================================================
+# DATABASE
+# ============================================================
+
+def get_db():
+    if not DATABASE_URL:
+        raise RuntimeError("DATABASE_URL environment variable is not configured.")
+
+    return psycopg2.connect(
+        DATABASE_URL,
+        cursor_factory=RealDictCursor,
+        sslmode="require"
+    )
+
+
+def db_execute(query, params=None, fetchone=False, fetchall=False,
+               commit=False):
+    conn = get_db()
+
+    try:
+        cur = conn.cursor()
+        cur.execute(query, params or ())
+
+        result = None
+
+        if fetchone:
+            result = cur.fetchone()
+        elif fetchall:
+            result = cur.fetchall()
+
+        if commit:
+            conn.commit()
+
+        cur.close()
+        return result
+
+    except Exception:
+        conn.rollback()
+        raise
+
+    finally:
+        conn.close()
+
+
+def generate_id(prefix):
+    return f"{prefix}-{datetime.now().strftime('%Y%m%d')}-{uuid.uuid4().hex[:6].upper()}"
+
+
+def utc_now():
+    return datetime.now(timezone.utc)
+
+
+# ============================================================
+# DATABASE INITIALIZATION
+# ============================================================
+
+SCHEMA = """
+CREATE TABLE IF NOT EXISTS users (
+    id SERIAL PRIMARY KEY,
+    full_name VARCHAR(150) NOT NULL,
+    email VARCHAR(255) UNIQUE NOT NULL,
+    phone VARCHAR(30),
+    password_hash TEXT NOT NULL,
+    role VARCHAR(30) NOT NULL,
+    profile_photo TEXT,
+    language VARCHAR(20) DEFAULT 'en-IN',
+    address TEXT,
+    city VARCHAR(100),
+    state VARCHAR(100),
+    pincode VARCHAR(20),
+    latitude DOUBLE PRECISION,
+    longitude DOUBLE PRECISION,
+    is_verified BOOLEAN DEFAULT FALSE,
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW(),
+    last_login TIMESTAMPTZ
+);
+
+CREATE TABLE IF NOT EXISTS customers (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER UNIQUE REFERENCES users(id) ON DELETE CASCADE,
+    customer_id VARCHAR(50) UNIQUE NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS collectors (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER UNIQUE REFERENCES users(id) ON DELETE CASCADE,
+    collector_id VARCHAR(50) UNIQUE NOT NULL,
+    collection_area VARCHAR(255),
+    government_id VARCHAR(100)
+);
+
+CREATE TABLE IF NOT EXISTS aggregators (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER UNIQUE REFERENCES users(id) ON DELETE CASCADE,
+    aggregator_id VARCHAR(50) UNIQUE NOT NULL,
+    organization_name VARCHAR(255),
+    operating_area VARCHAR(255),
+    gstin VARCHAR(100)
+);
+
+CREATE TABLE IF NOT EXISTS recyclers (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER UNIQUE REFERENCES users(id) ON DELETE CASCADE,
+    recycler_id VARCHAR(50) UNIQUE NOT NULL,
+    organization_name VARCHAR(255),
+    authorization_number VARCHAR(150),
+    processing_capacity NUMERIC(12,2),
+    gstin VARCHAR(100)
+);
+
+CREATE TABLE IF NOT EXISTS brands (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER UNIQUE REFERENCES users(id) ON DELETE CASCADE,
+    brand_id VARCHAR(50) UNIQUE NOT NULL,
+    brand_name VARCHAR(255) NOT NULL,
+    organization_name VARCHAR(255),
+    authorized_person VARCHAR(255),
+    gstin VARCHAR(100),
+    cpcb_registration_number VARCHAR(150),
+    epr_obligation NUMERIC(14,2) DEFAULT 10000,
+    logo TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS handovers (
+    id SERIAL PRIMARY KEY,
+    handover_id VARCHAR(50) UNIQUE NOT NULL,
+    customer_id INTEGER REFERENCES customers(id) ON DELETE SET NULL,
+    brand_id INTEGER REFERENCES brands(id) ON DELETE SET NULL,
+    product_category VARCHAR(150),
+    product_name VARCHAR(255),
+    brand_name VARCHAR(255),
+    model VARCHAR(255),
+    serial_number VARCHAR(255),
+    imei VARCHAR(255),
+    quantity NUMERIC(12,2),
+    estimated_weight NUMERIC(12,2),
+    pickup_location TEXT,
+    latitude DOUBLE PRECISION,
+    longitude DOUBLE PRECISION,
+    phone VARCHAR(30),
+    notes TEXT,
+    product_photo TEXT,
+    status VARCHAR(50) DEFAULT 'HANDOVER_REQUESTED',
+    assigned_collector_id INTEGER REFERENCES collectors(id) ON DELETE SET NULL,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS collections (
+    id SERIAL PRIMARY KEY,
+    collection_id VARCHAR(50) UNIQUE NOT NULL,
+    handover_id INTEGER REFERENCES handovers(id) ON DELETE SET NULL,
+    customer_id INTEGER REFERENCES customers(id) ON DELETE SET NULL,
+    collector_id INTEGER REFERENCES collectors(id) ON DELETE SET NULL,
+    aggregator_id INTEGER REFERENCES aggregators(id) ON DELETE SET NULL,
+    recycler_id INTEGER REFERENCES recyclers(id) ON DELETE SET NULL,
+    brand_id INTEGER REFERENCES brands(id) ON DELETE SET NULL,
+    item_category VARCHAR(150),
+    product_name VARCHAR(255),
+    brand_name VARCHAR(255),
+    quantity NUMERIC(12,2),
+    declared_weight NUMERIC(12,2),
+    collector_weight NUMERIC(12,2),
+    aggregator_weight NUMERIC(12,2),
+    recycler_weight NUMERIC(12,2),
+    latitude DOUBLE PRECISION,
+    longitude DOUBLE PRECISION,
+    gps_accuracy DOUBLE PRECISION,
+    image_hash VARCHAR(128),
+    collection_photo TEXT,
+    receiving_photo TEXT,
+    status VARCHAR(50) DEFAULT 'COLLECTED',
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS verification_records (
+    id SERIAL PRIMARY KEY,
+    collection_id INTEGER REFERENCES collections(id) ON DELETE CASCADE,
+    verifier_user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+    verification_type VARCHAR(50) NOT NULL,
+    weight NUMERIC(12,2),
+    status VARCHAR(50),
+    notes TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS collector_locations (
+    id SERIAL PRIMARY KEY,
+    collector_id INTEGER REFERENCES collectors(id) ON DELETE CASCADE,
+    latitude DOUBLE PRECISION NOT NULL,
+    longitude DOUBLE PRECISION NOT NULL,
+    accuracy DOUBLE PRECISION,
+    status VARCHAR(50),
+    timestamp TIMESTAMPTZ DEFAULT NOW(),
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS epr_records (
+    id SERIAL PRIMARY KEY,
+    epr_id VARCHAR(50) UNIQUE NOT NULL,
+    collection_id INTEGER UNIQUE REFERENCES collections(id) ON DELETE CASCADE,
+    brand_id INTEGER REFERENCES brands(id) ON DELETE SET NULL,
+    recycler_id INTEGER REFERENCES recyclers(id) ON DELETE SET NULL,
+    verified_weight NUMERIC(12,2) NOT NULL,
+    material VARCHAR(150),
+    status VARCHAR(50) DEFAULT 'EPR_VERIFIED',
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS epr_documents (
+    id SERIAL PRIMARY KEY,
+    document_id VARCHAR(50) UNIQUE NOT NULL,
+    brand_id INTEGER REFERENCES brands(id) ON DELETE CASCADE,
+    financial_year VARCHAR(20),
+    epr_obligation NUMERIC(14,2),
+    verified_weight NUMERIC(14,2),
+    compliance_percentage NUMERIC(8,3),
+    file_path TEXT,
+    status VARCHAR(50) DEFAULT 'GENERATED',
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS reward_transactions (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    collection_id INTEGER REFERENCES collections(id) ON DELETE SET NULL,
+    role VARCHAR(30),
+    points NUMERIC(12,2) NOT NULL,
+    transaction_type VARCHAR(50),
+    description TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS audit_logs (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+    role VARCHAR(30),
+    action VARCHAR(100),
+    entity VARCHAR(100),
+    entity_id VARCHAR(100),
+    previous_status VARCHAR(100),
+    new_status VARCHAR(100),
+    metadata JSONB,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS anomaly_flags (
+    id SERIAL PRIMARY KEY,
+    collection_id INTEGER REFERENCES collections(id) ON DELETE CASCADE,
+    anomaly_type VARCHAR(100),
+    severity VARCHAR(30),
+    description TEXT,
+    status VARCHAR(50) DEFAULT 'OPEN',
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS notifications (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    title VARCHAR(255),
+    message TEXT,
+    is_read BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
+CREATE INDEX IF NOT EXISTS idx_users_phone ON users(phone);
+CREATE INDEX IF NOT EXISTS idx_handover_status ON handovers(status);
+CREATE INDEX IF NOT EXISTS idx_collection_status ON collections(status);
+CREATE INDEX IF NOT EXISTS idx_collection_brand ON collections(brand_id);
+CREATE INDEX IF NOT EXISTS idx_collection_collector ON collections(collector_id);
+CREATE INDEX IF NOT EXISTS idx_locations_collector ON collector_locations(collector_id);
+CREATE INDEX IF NOT EXISTS idx_locations_timestamp ON collector_locations(timestamp);
+CREATE INDEX IF NOT EXISTS idx_collection_image_hash ON collections(image_hash);
+CREATE INDEX IF NOT EXISTS idx_collection_serial ON collections(serial_number);
+CREATE INDEX IF NOT EXISTS idx_epr_brand ON epr_records(brand_id);
+"""
+
+
+@app.route("/api/setup-db", methods=["POST"])
+def setup_db():
+    try:
+        conn = get_db()
+        cur = conn.cursor()
+        cur.execute(SCHEMA)
+        conn.commit()
+        cur.close()
+        conn.close()
+
+        return jsonify({
+            "success": True,
+            "message": "PostgreSQL database initialized successfully."
+        })
+
+    except Exception as e:
+        return jsonify({
+            "success": False,
+            "error": str(e)
+        }), 500
+
+
+# ============================================================
+# AUTH HELPERS
+# ============================================================
+
+def create_token(user):
+    payload = {
+        "user_id": user["id"],
+        "role": user["role"],
+        "exp": datetime.now(timezone.utc).timestamp() + (24 * 60 * 60)
     }
-};
+
+    return jwt.encode(
+        payload,
+        app.config["SECRET_KEY"],
+        algorithm="HS256"
+    )
 
 
-/*
-    For the additional Indian languages, English is used
-    as a safe fallback for labels not yet translated.
-    The language names themselves remain selectable.
-*/
+def get_token():
+    header = request.headers.get("Authorization", "")
 
-const additionalLanguages = [
-    "te",
-    "kn",
-    "ml",
-    "bn",
-    "mr",
-    "gu",
-    "pa",
-    "or",
-    "as",
-    "ur"
-];
+    if not header.startswith("Bearer "):
+        return None
 
-additionalLanguages.forEach(function (code) {
-
-    if (!TRANSLATIONS[code]) {
-
-        TRANSLATIONS[code] = {
-            ...TRANSLATIONS.en
-        };
-    }
-});
+    return header.split(" ", 1)[1]
 
 
-/* ============================================================
-   ROLE CONFIGURATION
-============================================================ */
+def current_user():
+    token = get_token()
 
-const ROLES = [
+    if not token:
+        return None
 
-    [
-        "CUSTOMER",
-        "🧑",
-        "customer",
-        "customerDesc"
-    ],
+    try:
+        payload = jwt.decode(
+            token,
+            app.config["SECRET_KEY"],
+            algorithms=["HS256"]
+        )
 
-    [
-        "COLLECTOR",
-        "🚲",
-        "collector",
-        "collectorDesc"
-    ],
+        return db_execute(
+            """
+            SELECT *
+            FROM users
+            WHERE id = %s
+              AND is_active = TRUE
+            """,
+            (payload["user_id"],),
+            fetchone=True
+        )
 
-    [
-        "AGGREGATOR",
-        "🏭",
-        "aggregator",
-        "aggregatorDesc"
-    ],
-
-    [
-        "RECYCLER",
-        "♻️",
-        "recycler",
-        "recyclerDesc"
-    ],
-
-    [
-        "BRAND",
-        "🏢",
-        "brand",
-        "brandDesc"
-    ],
-
-    [
-        "ADMIN",
-        "🛡️",
-        "admin",
-        "adminDesc"
-    ]
-];
+    except Exception:
+        return None
 
 
-/* ============================================================
-   APPLICATION STATE
-============================================================ */
+def login_required(fn):
+    @wraps(fn)
+    def wrapper(*args, **kwargs):
+        user = current_user()
 
-let currentLanguage =
-    localStorage.getItem(
-        "ewaste_language"
-    ) || "en";
+        if not user:
+            return jsonify({
+                "success": False,
+                "error": "Authentication required."
+            }), 401
 
-let selectedRole = "";
+        return fn(user, *args, **kwargs)
 
-let currentUser = null;
-
-let token =
-    localStorage.getItem(
-        "ewaste_token"
-    ) || "";
+    return wrapper
 
 
-/* ============================================================
-   TRANSLATION
-============================================================ */
+def roles_required(*allowed_roles):
+    def decorator(fn):
+        @wraps(fn)
+        def wrapper(user, *args, **kwargs):
 
-function t(key) {
+            if user["role"] not in allowed_roles:
+                return jsonify({
+                    "success": False,
+                    "error": "Unauthorized role."
+                }), 403
 
-    const language =
-        TRANSLATIONS[currentLanguage]
-        || TRANSLATIONS.en;
+            return fn(user, *args, **kwargs)
 
-    return (
-        language[key]
-        || TRANSLATIONS.en[key]
-        || key
-    );
-}
+        return wrapper
 
-
-/* ============================================================
-   HTML ESCAPE
-============================================================ */
-
-function escapeHTML(value) {
-
-    return String(
-        value ?? ""
-    ).replace(
-        /[&<>"']/g,
-        function (character) {
-
-            const map = {
-
-                "&": "&amp;",
-                "<": "&lt;",
-                ">": "&gt;",
-                '"': "&quot;",
-                "'": "&#039;"
-            };
-
-            return map[character];
-        }
-    );
-}
+    return decorator
 
 
-/* ============================================================
-   TOAST
-============================================================ */
+# ============================================================
+# AUDIT
+# ============================================================
 
-function toast(
-    message,
-    type = "success"
-) {
+def audit(user_id, role, action, entity, entity_id,
+          previous_status=None, new_status=None, metadata=None):
 
-    const element =
-        document.getElementById(
-            "toast"
-        );
-
-    element.textContent =
-        message;
-
-    element.className =
-        "toast " +
+    db_execute(
+        """
+        INSERT INTO audit_logs
         (
-            type === "error"
-                ? "error"
-                : ""
-        );
-
-    element.classList.remove(
-        "hidden"
-    );
-
-    setTimeout(
-        function () {
-
-            element.classList.add(
-                "hidden"
-            );
-
-        },
-        3200
-    );
-}
-
-
-/* ============================================================
-   SCREEN CONTROL
-============================================================ */
-
-function showScreen(id) {
-
-    const screens = [
-
-        "languageScreen",
-        "roleScreen",
-        "loginScreen",
-        "appScreen"
-    ];
-
-    screens.forEach(
-        function (screen) {
-
-            document
-                .getElementById(screen)
-                .classList
-                .add("hidden");
-        }
-    );
-
-    document
-        .getElementById(id)
-        .classList
-        .remove("hidden");
-
-    window.scrollTo({
-        top: 0,
-        behavior: "smooth"
-    });
-}
+            user_id,
+            role,
+            action,
+            entity,
+            entity_id,
+            previous_status,
+            new_status,
+            metadata
+        )
+        VALUES (%s,%s,%s,%s,%s,%s,%s,%s)
+        """,
+        (
+            user_id,
+            role,
+            action,
+            entity,
+            str(entity_id),
+            previous_status,
+            new_status,
+            psycopg2.extras.Json(metadata or {})
+        ),
+        commit=True
+    )
 
 
-/* ============================================================
-   LANGUAGE
-============================================================ */
+def notify(user_id, title, message):
 
-function selectLanguage(code) {
-
-    currentLanguage = code;
-
-    localStorage.setItem(
-        "ewaste_language",
-        code
-    );
-
-    renderRoles();
-
-    showScreen(
-        "roleScreen"
-    );
-}
+    db_execute(
+        """
+        INSERT INTO notifications
+        (user_id, title, message)
+        VALUES (%s,%s,%s)
+        """,
+        (user_id, title, message),
+        commit=True
+    )
 
 
-/* ============================================================
-   ROLE CARDS
-============================================================ */
+# ============================================================
+# HEALTH
+# ============================================================
 
-function renderRoles() {
+@app.route("/health")
+def health():
+    try:
+        db_execute("SELECT 1", fetchone=True)
 
-    document.getElementById(
-        "roleGrid"
-    ).innerHTML = ROLES.map(
-        function (role) {
+        return jsonify({
+            "status": "healthy",
+            "database": "connected",
+            "service": "E-Waste EPR Platform"
+        })
 
-            return `
-
-                <button
-                    class="role-card"
-                    onclick="chooseRole('${role[0]}')">
-
-                    <div class="role-icon">
-                        ${role[1]}
-                    </div>
-
-                    <h3>
-                        ${escapeHTML(
-                            t(role[2])
-                        )}
-                    </h3>
-
-                    <p>
-                        ${escapeHTML(
-                            t(role[3])
-                        )}
-                    </p>
-
-                </button>
-
-            `;
-        }
-    ).join("");
-}
+    except Exception as e:
+        return jsonify({
+            "status": "unhealthy",
+            "database": "error",
+            "error": str(e)
+        }), 500
 
 
-/* ============================================================
-   ROLE SELECTION
-============================================================ */
-
-function chooseRole(role) {
-
-    selectedRole = role;
-
-    document.getElementById(
-        "loginTitle"
-    ).textContent =
-        t("verifyIdentity")
-        + " — "
-        + t(
-            role.toLowerCase()
-        );
-
-    document.getElementById(
-        "loginId"
-    ).value = "";
-
-    document.getElementById(
-        "loginError"
-    ).textContent = "";
-
-    showScreen(
-        "loginScreen"
-    );
-}
+@app.route("/api/status")
+def status():
+    return jsonify({
+        "status": "online",
+        "platform": "E-Waste EPR Platform",
+        "database": "PostgreSQL",
+        "orm": "None - psycopg2"
+    })
 
 
-/* ============================================================
-   API HELPER
-============================================================ */
+# ============================================================
+# REGISTER
+# ============================================================
 
-async function api(
-    url,
-    options = {}
-) {
+@app.route("/api/auth/register", methods=["POST"])
+def register():
 
-    const headers = {
+    data = request.get_json() or {}
 
-        "Content-Type":
-            "application/json",
+    required = [
+        "full_name",
+        "email",
+        "password",
+        "role"
+    ]
 
-        ...(options.headers || {})
-    };
+    for field in required:
+        if not data.get(field):
+            return jsonify({
+                "success": False,
+                "error": f"{field} is required."
+            }), 400
 
-    if (token) {
+    role = data["role"].upper()
 
-        headers.Authorization =
-            "Bearer " + token;
-    }
+    allowed_roles = [
+        "USER",
+        "COLLECTOR",
+        "AGGREGATOR",
+        "RECYCLER",
+        "BRAND_PRO"
+    ]
 
-    const response =
-        await fetch(
-            url,
-            {
-                ...options,
-                headers
-            }
-        );
+    if role not in allowed_roles:
+        return jsonify({
+            "success": False,
+            "error": "Invalid role."
+        }), 400
 
-    let data = {};
+    email = data["email"].strip().lower()
 
-    try {
+    existing = db_execute(
+        "SELECT id FROM users WHERE email = %s",
+        (email,),
+        fetchone=True
+    )
 
-        data =
-            await response.json();
+    if existing:
+        return jsonify({
+            "success": False,
+            "error": "Email already registered."
+        }), 409
 
-    } catch (error) {
+    password_hash = generate_password_hash(data["password"])
 
-        data = {};
-    }
+    conn = get_db()
 
-    if (!response.ok) {
+    try:
+        cur = conn.cursor()
 
-        throw new Error(
-            data.message
-            || data.error
-            || "Request failed"
-        );
-    }
-
-    return data;
-}
-
-
-/* ============================================================
-   LOGIN
-============================================================ */
-
-async function login() {
-
-    const id =
-        document
-            .getElementById(
-                "loginId"
+        cur.execute(
+            """
+            INSERT INTO users
+            (
+                full_name,
+                email,
+                phone,
+                password_hash,
+                role,
+                language,
+                address,
+                city,
+                state,
+                pincode,
+                latitude,
+                longitude,
+                is_verified
             )
-            .value
-            .trim()
-            .toUpperCase();
-
-    const errorElement =
-        document.getElementById(
-            "loginError"
-        );
-
-    if (!id) {
-
-        errorElement.textContent =
-            "Enter your ID";
-
-        return;
-    }
-
-    try {
-
-        const data =
-            await api(
-                "/api/auth/login",
-                {
-
-                    method: "POST",
-
-                    body:
-                        JSON.stringify({
-
-                            role:
-                                selectedRole,
-
-                            user_id:
-                                id
-                        })
-                }
-            );
-
-        token =
-            data.access_token;
-
-        currentUser =
-            data.user;
-
-        localStorage.setItem(
-            "ewaste_token",
-            token
-        );
-
-        localStorage.setItem(
-            "ewaste_user",
-            JSON.stringify(
-                currentUser
+            VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+            RETURNING id
+            """,
+            (
+                data["full_name"],
+                email,
+                data.get("phone"),
+                password_hash,
+                role,
+                data.get("language", "en-IN"),
+                data.get("address"),
+                data.get("city"),
+                data.get("state"),
+                data.get("pincode"),
+                data.get("latitude"),
+                data.get("longitude"),
+                False
             )
-        );
-
-        updateNav();
-
-        showScreen(
-            "appScreen"
-        );
-
-        await renderDashboard();
-
-        toast(
-            "Login successful"
-        );
-
-    } catch (error) {
-
-        errorElement.textContent =
-            error.message;
-
-        toast(
-            error.message,
-            "error"
-        );
-    }
-}
-
-
-/* ============================================================
-   LOGOUT
-============================================================ */
-
-function logout() {
-
-    token = "";
-
-    currentUser = null;
-
-    localStorage.removeItem(
-        "ewaste_token"
-    );
-
-    localStorage.removeItem(
-        "ewaste_user"
-    );
-
-    document.getElementById(
-        "dashboardContent"
-    ).innerHTML = "";
-
-    updateNav();
-
-    showScreen(
-        "roleScreen"
-    );
-}
-
-
-/* ============================================================
-   NAVIGATION UPDATE
-============================================================ */
-
-function updateNav() {
-
-    const badge =
-        document.getElementById(
-            "userBadge"
-        );
-
-    const logoutButton =
-        document.getElementById(
-            "logoutBtn"
-        );
-
-    const refreshButton =
-        document.getElementById(
-            "refreshBtn"
-        );
-
-    if (currentUser) {
-
-        badge.textContent =
-            currentUser.name
-            + " • "
-            + currentUser.user_id;
-
-        badge.classList.remove(
-            "hidden"
-        );
-
-        logoutButton.classList.remove(
-            "hidden"
-        );
-
-        refreshButton.classList.remove(
-            "hidden"
-        );
-
-    } else {
-
-        badge.classList.add(
-            "hidden"
-        );
-
-        logoutButton.classList.add(
-            "hidden"
-        );
-
-        refreshButton.classList.add(
-            "hidden"
-        );
-    }
-}
-
-
-/* ============================================================
-   REFRESH
-============================================================ */
-
-async function refreshDashboard() {
-
-    try {
-
-        await renderDashboard();
-
-        toast(
-            "Dashboard refreshed"
-        );
-
-    } catch (error) {
-
-        toast(
-            error.message,
-            "error"
-        );
-    }
-}
-
-
-/* ============================================================
-   STAT CARD
-============================================================ */
-
-function statCard(
-    label,
-    value
-) {
-
-    return `
-
-        <div class="stat">
-
-            <div class="lbl">
-                ${escapeHTML(label)}
-            </div>
-
-            <div class="num">
-                ${escapeHTML(value)}
-            </div>
-
-        </div>
-
-    `;
-}
-
-
-/* ============================================================
-   DASHBOARD ROUTER
-============================================================ */
-
-async function renderDashboard() {
-
-    if (!currentUser) {
-        return;
-    }
-
-    document.getElementById(
-        "dashTitle"
-    ).textContent =
-        t("dashboard")
-        + " — "
-        + t(
-            currentUser.role.toLowerCase()
-        );
-
-    document.getElementById(
-        "dashSub"
-    ).textContent =
-        currentUser.name
-        + " • "
-        + currentUser.user_id;
-
-    let html = "";
-
-    if (
-        currentUser.role ===
-        "CUSTOMER"
-    ) {
-
-        html =
-            await customerDashboard();
-    }
-
-    if (
-        currentUser.role ===
-        "COLLECTOR"
-    ) {
-
-        html =
-            await collectorDashboard();
-    }
-
-    if (
-        currentUser.role ===
-        "AGGREGATOR"
-    ) {
-
-        html =
-            await aggregatorDashboard();
-    }
-
-    if (
-        currentUser.role ===
-        "RECYCLER"
-    ) {
-
-        html =
-            await recyclerDashboard();
-    }
-
-    if (
-        currentUser.role ===
-        "BRAND"
-    ) {
-
-        html =
-            await brandDashboard();
-    }
-
-    if (
-        currentUser.role ===
-        "ADMIN"
-    ) {
-
-        html =
-            await adminDashboard();
-    }
-
-    document.getElementById(
-        "dashboardContent"
-    ).innerHTML = html;
-}
-
-
-/* ============================================================
-   CHAIN
-============================================================ */
-
-function chain() {
-
-    return `
-
-        <div class="panel">
-
-            <h3>
-                ${t("chain")}
-            </h3>
-
-            <div class="chain">
-
-                <div class="node">
-                    Customer
-                </div>
-
-                <span class="arrow">
-                    →
-                </span>
-
-                <div class="node">
-                    Collector
-                </div>
-
-                <span class="arrow">
-                    →
-                </span>
-
-                <div class="node">
-                    Aggregator
-                </div>
-
-                <span class="arrow">
-                    →
-                </span>
-
-                <div class="node">
-                    Recycler
-                </div>
-
-                <span class="arrow">
-                    →
-                </span>
-
-                <div class="node">
-                    EPR
-                </div>
-
-                <span class="arrow">
-                    →
-                </span>
-
-                <div class="node">
-                    Brand / PRO
-                </div>
-
-            </div>
-
-        </div>
-
-    `;
-}
-
-
-/* ============================================================
-   CUSTOMER DASHBOARD
-============================================================ */
-
-async function customerDashboard() {
-
-    const dashboard =
-        await api(
-            "/api/dashboard"
-        );
-
-    const rewards =
-        await api(
-            "/api/rewards/"
-            + currentUser.user_id
-        );
-
-    const handovers =
-        await api(
-            "/api/handovers"
-        );
-
-    return `
-
-        ${chain()}
-
-        <div
-            class="grid grid-3">
-
-            ${statCard(
-                t("rewardPoints"),
-                rewards.balance.points
-            )}
-
-            ${statCard(
-                t("cashBalance"),
-                "₹"
-                + rewards.balance.cash.toFixed(2)
-            )}
-
-            ${statCard(
-                t("totalHandovers"),
-                handovers.length
-            )}
-
-        </div>
-
-
-        <div
-            class="grid grid-2"
-            style="margin-top:16px">
-
-
-            <div class="panel">
-
-                <h2>
-                    ${t("handover")}
-                </h2>
-
-
-                <div class="field">
-
-                    <label>
-                        ${t("phone")}
-                    </label>
-
-                    <input
-                        id="cPhone"
-                        value="${escapeHTML(
-                            currentUser.phone || ""
-                        )}">
-
-                </div>
-
-
-                <div class="field">
-
-                    <label>
-                        ${t("location")}
-                    </label>
-
-                    <input
-                        id="cLocation"
-                        placeholder="Chennai / GPS area">
-
-                </div>
-
-
-                <div class="field">
-
-                    <label>
-                        ${t("product")}
-                    </label>
-
-                    <input
-                        id="cProduct"
-                        placeholder="Laptop / phone / monitor">
-
-                </div>
-
-
-                <div class="field">
-
-                    <label>
-                        ${t("weight")}
-                    </label>
-
-                    <input
-                        id="cWeight"
-                        type="number"
-                        step="0.1">
-
-                </div>
-
-
-                <div class="field">
-
-                    <label>
-                        ${t("serial")}
-                    </label>
-
-                    <input
-                        id="cSerial">
-
-                </div>
-
-
-                <div class="field">
-
-                    <label>
-                        ${t("collectorId")}
-                    </label>
-
-                    <input
-                        id="cCollector"
-                        value="COL-2001">
-
-                </div>
-
-
-                <button
-                    class="btn"
-                    onclick="createHandover()">
-
-                    ${t("createHandover")}
-
-                </button>
-
-            </div>
-
-
-            ${rewardPanel(rewards)}
-
-        </div>
-
-
-        <div
-            class="panel"
-            style="margin-top:16px">
-
-            <h2>
-                ${t("handover")}
-            </h2>
-
-            ${handoverTable(
-                handovers
-            )}
-
-        </div>
-
-    `;
-}
-
-
-/* ============================================================
-   REWARD PANEL
-============================================================ */
-
-function rewardPanel(
-    rewards
-) {
-
-    return `
-
-        <div class="panel">
-
-            <h2>
-                ${t("rewards")}
-            </h2>
-
-
-            <div class="grid grid-2">
-
-                ${statCard(
-                    t("rewardPoints"),
-                    rewards.balance.points
-                )}
-
-                ${statCard(
-                    t("cashBalance"),
-                    "₹"
-                    + rewards.balance.cash.toFixed(2)
-                )}
-
-            </div>
-
-
-            <div
-                class="field"
-                style="margin-top:16px">
-
-                <label>
-                    ${t("pointsToWithdraw")}
-                </label>
-
-                <input
-                    id="wPoints"
-                    type="number"
-                    min="100"
-                    value="100">
-
-            </div>
-
-
-            <div class="field">
-
-                <label>
-                    ${t("upi")}
-                </label>
-
-                <input
-                    id="wUpi"
-                    placeholder="demo@upi">
-
-            </div>
-
-
-            <button
-                class="btn"
-                onclick="withdraw()">
-
-                ${t("requestWithdrawal")}
-
-            </button>
-
-
-            <p class="small">
-
-                ${t("minimumWithdrawal")}
-
-                <br>
-
-                ${t("noRealMoney")}
-
-            </p>
-
-        </div>
-
-    `;
-}
-
-
-/* ============================================================
-   HANDOVER TABLE
-============================================================ */
-
-function handoverTable(
-    rows
-) {
-
-    if (!rows.length) {
-
-        return `
-            <p class="small">
-                ${t("noRecords")}
-            </p>
-        `;
-    }
-
-    return `
-
-        <div class="table-wrap">
-
-            <table>
-
-                <thead>
-
-                    <tr>
-
-                        <th>ID</th>
-
-                        <th>
-                            ${t("product")}
-                        </th>
-
-                        <th>
-                            ${t("weight")}
-                        </th>
-
-                        <th>
-                            ${t("collector")}
-                        </th>
-
-                        <th>
-                            ${t("status")}
-                        </th>
-
-                    </tr>
-
-                </thead>
-
-
-                <tbody>
-
-                    ${rows.map(
-                        function (row) {
-
-                            return `
-
-                                <tr>
-
-                                    <td>
-                                        ${escapeHTML(
-                                            row.handover_id
-                                        )}
-                                    </td>
-
-                                    <td>
-                                        ${escapeHTML(
-                                            row.product
-                                        )}
-                                    </td>
-
-                                    <td>
-                                        ${escapeHTML(
-                                            row.approximate_weight
-                                        )}
-                                        kg
-                                    </td>
-
-                                    <td>
-                                        ${escapeHTML(
-                                            row.collector_id
-                                        )}
-                                    </td>
-
-                                    <td>
-
-                                        <span
-                                            class="status">
-
-                                            ${escapeHTML(
-                                                row.status
-                                            )}
-
-                                        </span>
-
-                                    </td>
-
-                                </tr>
-
-                            `;
-                        }
-                    ).join("")}
-
-                </tbody>
-
-            </table>
-
-        </div>
-
-    `;
-}
-
-
-/* ============================================================
-   CREATE HANDOVER
-============================================================ */
-
-async function createHandover() {
-
-    try {
-
-        const data =
-            await api(
-                "/api/handover",
-                {
-
-                    method: "POST",
-
-                    body:
-                        JSON.stringify({
-
-                            phone:
-                                document
-                                    .getElementById(
-                                        "cPhone"
-                                    )
-                                    .value,
-
-                            location:
-                                document
-                                    .getElementById(
-                                        "cLocation"
-                                    )
-                                    .value,
-
-                            product:
-                                document
-                                    .getElementById(
-                                        "cProduct"
-                                    )
-                                    .value,
-
-                            approximate_weight:
-                                document
-                                    .getElementById(
-                                        "cWeight"
-                                    )
-                                    .value,
-
-                            serial_number:
-                                document
-                                    .getElementById(
-                                        "cSerial"
-                                    )
-                                    .value,
-
-                            collector_id:
-                                document
-                                    .getElementById(
-                                        "cCollector"
-                                    )
-                                    .value
-                        })
-                }
-            );
-
-        toast(
-            "Handover created: "
-            + data.handover.handover_id
-        );
-
-        await renderDashboard();
-
-    } catch (error) {
-
-        toast(
-            error.message,
-            "error"
-        );
-    }
-}
-
-
-/* ============================================================
-   WITHDRAW
-============================================================ */
-
-async function withdraw() {
-
-    try {
-
-        const data =
-            await api(
-                "/api/withdraw",
-                {
-
-                    method: "POST",
-
-                    body:
-                        JSON.stringify({
-
-                            points:
-                                document
-                                    .getElementById(
-                                        "wPoints"
-                                    )
-                                    .value,
-
-                            upi_id:
-                                document
-                                    .getElementById(
-                                        "wUpi"
-                                    )
-                                    .value
-                        })
-                }
-            );
-
-        toast(
-            "Withdrawal request "
-            + data.withdrawal.withdrawal_id
-            + " submitted"
-        );
-
-        await renderDashboard();
-
-    } catch (error) {
-
-        toast(
-            error.message,
-            "error"
-        );
-    }
-}
-
-
-/* ============================================================
-   COLLECTOR DASHBOARD
-============================================================ */
-
-async function collectorDashboard() {
-
-    const handovers =
-        await api(
-            "/api/handovers"
-        );
-
-    const collections =
-        await api(
-            "/api/collections"
-        );
-
-    const rewards =
-        await api(
-            "/api/rewards/"
-            + currentUser.user_id
-        );
-
-    const assigned =
-        handovers.filter(
-            function (item) {
-
-                return (
-                    item.collector_id
-                    === currentUser.user_id
-                );
-            }
-        );
-
-    return `
-
-        ${chain()}
-
-
-        <div class="grid grid-4">
-
-            ${statCard(
-                t("totalHandovers"),
-                assigned.length
-            )}
-
-            ${statCard(
-                t("totalCollections"),
-                collections.length
-            )}
-
-            ${statCard(
-                t("rewardPoints"),
-                rewards.balance.points
-            )}
-
-            ${statCard(
-                t("cashBalance"),
-                "₹"
-                + rewards.balance.cash.toFixed(2)
-            )}
-
-        </div>
-
-
-        <div
-            class="grid grid-2"
-            style="margin-top:16px">
-
-
-            <div class="panel">
-
-                <h2>
-                    ${t("collection")}
-                    +
-                    ${t("voice")}
-                </h2>
-
-
-                <div class="notice">
-
-                    ${t("voice")}:
-
-                    Browser speech recognition
-                    availability varies by
-                    device and browser.
-
-                </div>
-
-
-                <div class="field">
-
-                    <label>
-                        ${t("handoverId")}
-                    </label>
-
-                    <input
-                        id="colHandover"
-                        placeholder="HO-1001">
-
-                </div>
-
-
-                <div class="field">
-
-                    <label>
-                        ${t("weight")}
-                    </label>
-
-                    <input
-                        id="colWeight"
-                        type="number"
-                        step="0.1">
-
-                </div>
-
-
-                <div class="field">
-
-                    <label>
-                        ${t("gps")}
-                    </label>
-
-                    <input
-                        id="colGps"
-                        placeholder="Click GPS button">
-
-                </div>
-
-
-                <div class="field">
-
-                    <label>
-                        ${t("capture")}
-                    </label>
-
-                    <input
-                        id="colHash"
-                        placeholder="Optional SHA-256 image hash">
-
-                </div>
-
-
-                <div
-                    style="
-                        display:flex;
-                        gap:8px;
-                        flex-wrap:wrap;
-                    ">
-
-                    <button
-                        class="btn secondary"
-                        onclick="getGPS()">
-
-                        📍
-                        ${t("gps")}
-
-                    </button>
-
-
-                    <button
-                        class="btn secondary"
-                        onclick="startVoice()">
-
-                        🎙️
-                        ${t("voice")}
-
-                    </button>
-
-
-                    <button
-                        class="btn"
-                        onclick="submitCollection()">
-
-                        ${t("submit")}
-
-                    </button>
-
-                </div>
-
-            </div>
-
-
-            ${rewardPanel(rewards)}
-
-        </div>
-
-
-        <div
-            class="panel"
-            style="margin-top:16px">
-
-            <h2>
-                ${t("collection")}
-            </h2>
-
-            ${collectionTable(
-                collections
-            )}
-
-        </div>
-
-    `;
-}
-
-
-/* ============================================================
-   GPS
-============================================================ */
-
-function getGPS() {
-
-    if (
-        !navigator.geolocation
-    ) {
-
-        toast(
-            "GPS is not supported",
-            "error"
-        );
-
-        return;
-    }
-
-    navigator.geolocation.getCurrentPosition(
-
-        function (position) {
-
-            document.getElementById(
-                "colGps"
-            ).value =
-                position.coords.latitude.toFixed(6)
-                + ","
-                + position.coords.longitude.toFixed(6);
-
-            toast(
-                "GPS location captured"
-            );
+        )
+
+        user_id = cur.fetchone()["id"]
+
+        if role == "USER":
+            role_id = generate_id("USR")
+
+            cur.execute(
+                """
+                INSERT INTO customers
+                (user_id, customer_id)
+                VALUES (%s,%s)
+                """,
+                (user_id, role_id)
+            )
+
+        elif role == "COLLECTOR":
+            role_id = generate_id("COL")
+
+            cur.execute(
+                """
+                INSERT INTO collectors
+                (user_id, collector_id, collection_area, government_id)
+                VALUES (%s,%s,%s,%s)
+                """,
+                (
+                    user_id,
+                    role_id,
+                    data.get("collection_area"),
+                    data.get("government_id")
+                )
+            )
+
+        elif role == "AGGREGATOR":
+            role_id = generate_id("AGG")
+
+            cur.execute(
+                """
+                INSERT INTO aggregators
+                (
+                    user_id,
+                    aggregator_id,
+                    organization_name,
+                    operating_area,
+                    gstin
+                )
+                VALUES (%s,%s,%s,%s,%s)
+                """,
+                (
+                    user_id,
+                    role_id,
+                    data.get("organization_name"),
+                    data.get("operating_area"),
+                    data.get("gstin")
+                )
+            )
+
+        elif role == "RECYCLER":
+            role_id = generate_id("REC")
+
+            cur.execute(
+                """
+                INSERT INTO recyclers
+                (
+                    user_id,
+                    recycler_id,
+                    organization_name,
+                    authorization_number,
+                    processing_capacity,
+                    gstin
+                )
+                VALUES (%s,%s,%s,%s,%s,%s)
+                """,
+                (
+                    user_id,
+                    role_id,
+                    data.get("organization_name"),
+                    data.get("authorization_number"),
+                    data.get("processing_capacity"),
+                    data.get("gstin")
+                )
+            )
+
+        elif role == "BRAND_PRO":
+            role_id = generate_id("BRAND")
+
+            cur.execute(
+                """
+                INSERT INTO brands
+                (
+                    user_id,
+                    brand_id,
+                    brand_name,
+                    organization_name,
+                    authorized_person,
+                    gstin,
+                    cpcb_registration_number,
+                    epr_obligation
+                )
+                VALUES (%s,%s,%s,%s,%s,%s,%s,%s)
+                """,
+                (
+                    user_id,
+                    role_id,
+                    data.get("brand_name", data.get("organization_name")),
+                    data.get("organization_name"),
+                    data.get("authorized_person"),
+                    data.get("gstin"),
+                    data.get("cpcb_registration_number"),
+                    data.get("epr_obligation", DEMO_EPR_OBLIGATION)
+                )
+            )
+
+        conn.commit()
+        cur.close()
+
+        return jsonify({
+            "success": True,
+            "message": "Registration successful.",
+            "user_id": user_id,
+            "role_id": role_id,
+            "role": role
+        }), 201
+
+    except Exception as e:
+        conn.rollback()
+
+        return jsonify({
+            "success": False,
+            "error": str(e)
+        }), 500
+
+    finally:
+        conn.close()
+
+
+# ============================================================
+# LOGIN
+# ============================================================
+
+@app.route("/api/auth/login", methods=["POST"])
+def login():
+
+    data = request.get_json() or {}
+
+    identifier = (
+        data.get("email")
+        or data.get("phone")
+        or ""
+    ).strip()
+
+    password = data.get("password", "")
+    requested_role = data.get("role")
+
+    if not identifier or not password:
+        return jsonify({
+            "success": False,
+            "error": "Email/phone and password are required."
+        }), 400
+
+    user = db_execute(
+        """
+        SELECT *
+        FROM users
+        WHERE LOWER(email) = LOWER(%s)
+           OR phone = %s
+        """,
+        (identifier, identifier),
+        fetchone=True
+    )
+
+    if not user or not check_password_hash(
+        user["password_hash"],
+        password
+    ):
+        return jsonify({
+            "success": False,
+            "error": "Invalid login credentials."
+        }), 401
+
+    if requested_role:
+        if user["role"] != requested_role.upper():
+            return jsonify({
+                "success": False,
+                "error": "This account does not belong to the selected role."
+            }), 403
+
+    db_execute(
+        """
+        UPDATE users
+        SET last_login = NOW(),
+            updated_at = NOW()
+        WHERE id = %s
+        """,
+        (user["id"],),
+        commit=True
+    )
+
+    token = create_token(user)
+
+    return jsonify({
+        "success": True,
+        "token": token,
+        "user": {
+            "id": user["id"],
+            "name": user["full_name"],
+            "email": user["email"],
+            "phone": user["phone"],
+            "role": user["role"],
+            "language": user["language"]
+        }
+    })
+
+
+# ============================================================
+# CURRENT USER
+# ============================================================
+
+@app.route("/api/auth/me")
+@login_required
+def me(user):
+
+    return jsonify({
+        "success": True,
+        "user": dict(user)
+    })
+
+
+# ============================================================
+# PROFILE
+# ============================================================
+
+@app.route("/api/auth/profile", methods=["PUT"])
+@login_required
+def update_profile(user):
+
+    data = request.get_json() or {}
+
+    allowed = [
+        "full_name",
+        "phone",
+        "language",
+        "address",
+        "city",
+        "state",
+        "pincode",
+        "latitude",
+        "longitude",
+        "profile_photo"
+    ]
+
+    updates = []
+    values = []
+
+    for field in allowed:
+        if field in data:
+            updates.append(f"{field} = %s")
+            values.append(data[field])
+
+    if not updates:
+        return jsonify({
+            "success": False,
+            "error": "No profile fields supplied."
+        }), 400
+
+    updates.append("updated_at = NOW()")
+    values.append(user["id"])
+
+    db_execute(
+        f"""
+        UPDATE users
+        SET {", ".join(updates)}
+        WHERE id = %s
+        """,
+        tuple(values),
+        commit=True
+    )
+
+    return jsonify({
+        "success": True,
+        "message": "Profile updated."
+    })
+
+
+# ============================================================
+# CHANGE PASSWORD
+# ============================================================
+
+@app.route("/api/auth/change-password", methods=["PUT"])
+@login_required
+def change_password(user):
+
+    data = request.get_json() or {}
+
+    old_password = data.get("old_password")
+    new_password = data.get("new_password")
+
+    if not old_password or not new_password:
+        return jsonify({
+            "success": False,
+            "error": "Both passwords are required."
+        }), 400
+
+    if not check_password_hash(
+        user["password_hash"],
+        old_password
+    ):
+        return jsonify({
+            "success": False,
+            "error": "Current password is incorrect."
+        }), 400
+
+    db_execute(
+        """
+        UPDATE users
+        SET password_hash = %s,
+            updated_at = NOW()
+        WHERE id = %s
+        """,
+        (
+            generate_password_hash(new_password),
+            user["id"]
+        ),
+        commit=True
+    )
+
+    return jsonify({
+        "success": True,
+        "message": "Password changed successfully."
+    })
+
+
+# ============================================================
+# CUSTOMER HANDOVER
+# ============================================================
+
+@app.route("/api/customer/handover", methods=["POST"])
+@login_required
+@roles_required("USER")
+def create_handover(user):
+
+    data = request.get_json() or {}
+
+    customer = db_execute(
+        """
+        SELECT *
+        FROM customers
+        WHERE user_id = %s
+        """,
+        (user["id"],),
+        fetchone=True
+    )
+
+    if not customer:
+        return jsonify({
+            "success": False,
+            "error": "Customer profile not found."
+        }), 404
+
+    handover_id = generate_id("HO")
+
+    brand_id = None
+    brand_name = data.get("brand")
+
+    if brand_name:
+        brand = db_execute(
+            """
+            SELECT id
+            FROM brands
+            WHERE LOWER(brand_name) = LOWER(%s)
+            """,
+            (brand_name,),
+            fetchone=True
+        )
+
+        if brand:
+            brand_id = brand["id"]
+
+    db_execute(
+        """
+        INSERT INTO handovers
+        (
+            handover_id,
+            customer_id,
+            brand_id,
+            product_category,
+            product_name,
+            brand_name,
+            model,
+            serial_number,
+            imei,
+            quantity,
+            estimated_weight,
+            pickup_location,
+            latitude,
+            longitude,
+            phone,
+            notes,
+            product_photo
+        )
+        VALUES
+        (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+        """,
+        (
+            handover_id,
+            customer["id"],
+            brand_id,
+            data.get("product_category"),
+            data.get("product_name"),
+            brand_name,
+            data.get("model"),
+            data.get("serial_number"),
+            data.get("imei"),
+            data.get("quantity", 1),
+            data.get("estimated_weight", 0),
+            data.get("pickup_location"),
+            data.get("latitude"),
+            data.get("longitude"),
+            data.get("phone", user["phone"]),
+            data.get("notes"),
+            data.get("product_photo")
+        ),
+        commit=True
+    )
+
+    audit(
+        user["id"],
+        user["role"],
+        "HANDOVER_CREATED",
+        "handover",
+        handover_id,
+        new_status="HANDOVER_REQUESTED"
+    )
+
+    return jsonify({
+        "success": True,
+        "handover_id": handover_id,
+        "status": "HANDOVER_REQUESTED"
+    }), 201
+
+
+@app.route("/api/customer/handovers")
+@login_required
+@roles_required("USER")
+def customer_handovers(user):
+
+    rows = db_execute(
+        """
+        SELECT h.*
+        FROM handovers h
+        JOIN customers c
+          ON h.customer_id = c.id
+        WHERE c.user_id = %s
+        ORDER BY h.created_at DESC
+        """,
+        (user["id"],),
+        fetchall=True
+    )
+
+    return jsonify({
+        "success": True,
+        "handovers": rows
+    })
+
+
+# ============================================================
+# COLLECTOR PICKUPS
+# ============================================================
+
+@app.route("/api/collector/pickups")
+@login_required
+@roles_required("COLLECTOR")
+def collector_pickups(user):
+
+    collector = db_execute(
+        """
+        SELECT *
+        FROM collectors
+        WHERE user_id = %s
+        """,
+        (user["id"],),
+        fetchone=True
+    )
+
+    rows = db_execute(
+        """
+        SELECT
+            h.*,
+            c.collector_id
+        FROM handovers h
+        LEFT JOIN collectors c
+          ON h.assigned_collector_id = c.id
+        WHERE
+            h.status = 'HANDOVER_REQUESTED'
+            OR h.assigned_collector_id = %s
+        ORDER BY h.created_at DESC
+        """,
+        (collector["id"],),
+        fetchall=True
+    )
+
+    return jsonify({
+        "success": True,
+        "pickups": rows
+    })
+
+
+@app.route("/api/collector/pickups/<handover_id>/accept", methods=["POST"])
+@login_required
+@roles_required("COLLECTOR")
+def accept_pickup(user, handover_id):
+
+    collector = db_execute(
+        """
+        SELECT *
+        FROM collectors
+        WHERE user_id = %s
+        """,
+        (user["id"],),
+        fetchone=True
+    )
+
+    handover = db_execute(
+        """
+        SELECT *
+        FROM handovers
+        WHERE handover_id = %s
+        """,
+        (handover_id,),
+        fetchone=True
+    )
+
+    if not handover:
+        return jsonify({
+            "success": False,
+            "error": "Handover not found."
+        }), 404
+
+    db_execute(
+        """
+        UPDATE handovers
+        SET assigned_collector_id = %s,
+            status = 'COLLECTOR_ASSIGNED',
+            updated_at = NOW()
+        WHERE id = %s
+        """,
+        (collector["id"], handover["id"]),
+        commit=True
+    )
+
+    audit(
+        user["id"],
+        user["role"],
+        "PICKUP_ACCEPTED",
+        "handover",
+        handover_id,
+        previous_status=handover["status"],
+        new_status="COLLECTOR_ASSIGNED"
+    )
+
+    return jsonify({
+        "success": True,
+        "status": "COLLECTOR_ASSIGNED"
+    })
+
+
+@app.route("/api/collector/pickups/<handover_id>/start", methods=["POST"])
+@login_required
+@roles_required("COLLECTOR")
+def start_trip(user, handover_id):
+
+    collector = db_execute(
+        """
+        SELECT *
+        FROM collectors
+        WHERE user_id = %s
+        """,
+        (user["id"],),
+        fetchone=True
+    )
+
+    handover = db_execute(
+        """
+        SELECT *
+        FROM handovers
+        WHERE handover_id = %s
+          AND assigned_collector_id = %s
+        """,
+        (handover_id, collector["id"]),
+        fetchone=True
+    )
+
+    if not handover:
+        return jsonify({
+            "success": False,
+            "error": "Assigned handover not found."
+        }), 404
+
+    db_execute(
+        """
+        UPDATE handovers
+        SET status = 'TRAVELLING',
+            updated_at = NOW()
+        WHERE id = %s
+        """,
+        (handover["id"],),
+        commit=True
+    )
+
+    return jsonify({
+        "success": True,
+        "status": "TRAVELLING"
+    })
+
+
+@app.route("/api/collector/pickups/<handover_id>/arrive", methods=["POST"])
+@login_required
+@roles_required("COLLECTOR")
+def arrive_pickup(user, handover_id):
+
+    collector = db_execute(
+        """
+        SELECT *
+        FROM collectors
+        WHERE user_id = %s
+        """,
+        (user["id"],),
+        fetchone=True
+    )
+
+    handover = db_execute(
+        """
+        SELECT *
+        FROM handovers
+        WHERE handover_id = %s
+          AND assigned_collector_id = %s
+        """,
+        (handover_id, collector["id"]),
+        fetchone=True
+    )
+
+    if not handover:
+        return jsonify({
+            "success": False,
+            "error": "Assigned handover not found."
+        }), 404
+
+    db_execute(
+        """
+        UPDATE handovers
+        SET status = 'ARRIVED',
+            updated_at = NOW()
+        WHERE id = %s
+        """,
+        (handover["id"],),
+        commit=True
+    )
+
+    return jsonify({
+        "success": True,
+        "status": "ARRIVED"
+    })
+
+
+# ============================================================
+# COLLECTOR LOCATION
+# ============================================================
+
+@app.route("/api/collector/location/sharing", methods=["POST"])
+@login_required
+@roles_required("COLLECTOR")
+def location_sharing(user):
+
+    data = request.get_json() or {}
+
+    enabled = bool(data.get("enabled"))
+
+    collector = db_execute(
+        """
+        SELECT collector_id
+        FROM collectors
+        WHERE user_id = %s
+        """,
+        (user["id"],),
+        fetchone=True
+    )
+
+    return jsonify({
+        "success": True,
+        "location_sharing": enabled,
+        "collector_id": collector["collector_id"]
+    })
+
+
+@app.route("/api/collector/location", methods=["POST"])
+@login_required
+@roles_required("COLLECTOR")
+def update_location(user):
+
+    data = request.get_json() or {}
+
+    latitude = data.get("latitude")
+    longitude = data.get("longitude")
+
+    if latitude is None or longitude is None:
+        return jsonify({
+            "success": False,
+            "error": "Latitude and longitude are required."
+        }), 400
+
+    collector = db_execute(
+        """
+        SELECT *
+        FROM collectors
+        WHERE user_id = %s
+        """,
+        (user["id"],),
+        fetchone=True
+    )
+
+    db_execute(
+        """
+        INSERT INTO collector_locations
+        (
+            collector_id,
+            latitude,
+            longitude,
+            accuracy,
+            status,
+            timestamp
+        )
+        VALUES (%s,%s,%s,%s,%s,NOW())
+        """,
+        (
+            collector["id"],
+            latitude,
+            longitude,
+            data.get("accuracy"),
+            data.get("status", "AVAILABLE")
+        ),
+        commit=True
+    )
+
+    return jsonify({
+        "success": True,
+        "message": "Location updated."
+    })
+
+
+# ============================================================
+# AGGREGATOR LIVE TRACKING
+# ============================================================
+
+@app.route("/api/aggregator/live-collectors")
+@login_required
+@roles_required("AGGREGATOR")
+def live_collectors(user):
+
+    rows = db_execute(
+        """
+        SELECT
+            c.collector_id,
+            u.full_name,
+            u.phone,
+            l.latitude,
+            l.longitude,
+            l.accuracy,
+            l.status,
+            l.timestamp AS last_updated
+        FROM collectors c
+        JOIN users u
+          ON c.user_id = u.id
+        LEFT JOIN LATERAL
+        (
+            SELECT *
+            FROM collector_locations cl
+            WHERE cl.collector_id = c.id
+            ORDER BY cl.timestamp DESC
+            LIMIT 1
+        ) l ON TRUE
+        ORDER BY u.full_name
+        """,
+        fetchall=True
+    )
+
+    return jsonify({
+        "success": True,
+        "collectors": rows
+    })
+
+
+@app.route("/api/aggregator/live-tracking")
+@login_required
+@roles_required("AGGREGATOR")
+def live_tracking(user):
+
+    rows = db_execute(
+        """
+        SELECT
+            c.collector_id,
+            u.full_name,
+            u.phone,
+            l.latitude,
+            l.longitude,
+            l.accuracy,
+            l.status,
+            l.timestamp AS last_updated
+        FROM collectors c
+        JOIN users u
+          ON c.user_id = u.id
+        LEFT JOIN LATERAL
+        (
+            SELECT *
+            FROM collector_locations cl
+            WHERE cl.collector_id = c.id
+            ORDER BY cl.timestamp DESC
+            LIMIT 1
+        ) l ON TRUE
+        """,
+        fetchall=True
+    )
+
+    return jsonify({
+        "success": True,
+        "tracking": rows
+    })
+
+
+# ============================================================
+# CREATE COLLECTION
+# ============================================================
+
+@app.route("/api/collection", methods=["POST"])
+@login_required
+@roles_required("COLLECTOR")
+def create_collection(user):
+
+    data = request.get_json() or {}
+
+    collector = db_execute(
+        """
+        SELECT *
+        FROM collectors
+        WHERE user_id = %s
+        """,
+        (user["id"],),
+        fetchone=True
+    )
+
+    handover = db_execute(
+        """
+        SELECT *
+        FROM handovers
+        WHERE handover_id = %s
+          AND assigned_collector_id = %s
+        """,
+        (
+            data.get("handover_id"),
+            collector["id"]
+        ),
+        fetchone=True
+    )
+
+    if not handover:
+        return jsonify({
+            "success": False,
+            "error": "Assigned handover not found."
+        }), 404
+
+    image_hash = data.get("image_hash")
+
+    if not image_hash:
+        image_data = str({
+            "handover_id": data.get("handover_id"),
+            "product": data.get("product_name"),
+            "weight": data.get("weight"),
+            "timestamp": str(utc_now())
+        })
+
+        image_hash = hashlib.sha256(
+            image_data.encode()
+        ).hexdigest()
+
+    duplicate = db_execute(
+        """
+        SELECT collection_id
+        FROM collections
+        WHERE image_hash = %s
+        """,
+        (image_hash,),
+        fetchone=True
+    )
+
+    collection_id = generate_id("EW")
+
+    conn = get_db()
+
+    try:
+        cur = conn.cursor()
+
+        cur.execute(
+            """
+            INSERT INTO collections
+            (
+                collection_id,
+                handover_id,
+                customer_id,
+                collector_id,
+                brand_id,
+                item_category,
+                product_name,
+                brand_name,
+                quantity,
+                declared_weight,
+                collector_weight,
+                latitude,
+                longitude,
+                gps_accuracy,
+                image_hash,
+                collection_photo,
+                status
+            )
+            VALUES
+            (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+            RETURNING id
+            """,
+            (
+                collection_id,
+                handover["id"],
+                handover["customer_id"],
+                collector["id"],
+                handover["brand_id"],
+                data.get("item_category", handover["product_category"]),
+                data.get("product_name", handover["product_name"]),
+                data.get("brand_name", handover["brand_name"]),
+                data.get("quantity", handover["quantity"]),
+                handover["estimated_weight"],
+                data.get("weight", 0),
+                data.get("latitude", handover["latitude"]),
+                data.get("longitude", handover["longitude"]),
+                data.get("gps_accuracy"),
+                image_hash,
+                data.get("photo"),
+                "COLLECTED"
+            )
+        )
+
+        collection = cur.fetchone()
+
+        cur.execute(
+            """
+            UPDATE handovers
+            SET status = 'COLLECTED',
+                updated_at = NOW()
+            WHERE id = %s
+            """,
+            (handover["id"],)
+        )
+
+        conn.commit()
+        cur.close()
+
+    except Exception as e:
+        conn.rollback()
+
+        return jsonify({
+            "success": False,
+            "error": str(e)
+        }), 500
+
+    finally:
+        conn.close()
+
+    if duplicate:
+        db_execute(
+            """
+            INSERT INTO anomaly_flags
+            (
+                collection_id,
+                anomaly_type,
+                severity,
+                description
+            )
+            VALUES
+            (%s,%s,%s,%s)
+            """,
+            (
+                collection["id"],
+                "DUPLICATE_IMAGE_HASH",
+                "HIGH",
+                f"Image hash already used by {duplicate['collection_id']}"
+            ),
+            commit=True
+        )
+
+    audit(
+        user["id"],
+        user["role"],
+        "COLLECTION_CREATED",
+        "collection",
+        collection_id,
+        new_status="COLLECTED"
+    )
+
+    return jsonify({
+        "success": True,
+        "collection_id": collection_id,
+        "status": "COLLECTED",
+        "image_hash": image_hash,
+        "duplicate_flag": bool(duplicate)
+    }), 201
+
+
+# ============================================================
+# COLLECTIONS
+# ============================================================
+
+@app.route("/api/collections")
+@login_required
+def collections_list(user):
+
+    if user["role"] == "COLLECTOR":
+
+        collector = db_execute(
+            """
+            SELECT id
+            FROM collectors
+            WHERE user_id = %s
+            """,
+            (user["id"],),
+            fetchone=True
+        )
+
+        rows = db_execute(
+            """
+            SELECT *
+            FROM collections
+            WHERE collector_id = %s
+            ORDER BY created_at DESC
+            """,
+            (collector["id"],),
+            fetchall=True
+        )
+
+    elif user["role"] == "AGGREGATOR":
+
+        rows = db_execute(
+            """
+            SELECT *
+            FROM collections
+            ORDER BY created_at DESC
+            """,
+            fetchall=True
+        )
+
+    elif user["role"] == "RECYCLER":
+
+        recycler = db_execute(
+            """
+            SELECT id
+            FROM recyclers
+            WHERE user_id = %s
+            """,
+            (user["id"],),
+            fetchone=True
+        )
+
+        rows = db_execute(
+            """
+            SELECT *
+            FROM collections
+            WHERE recycler_id = %s
+            ORDER BY created_at DESC
+            """,
+            (recycler["id"],),
+            fetchall=True
+        )
+
+    elif user["role"] == "BRAND_PRO":
+
+        brand = db_execute(
+            """
+            SELECT id
+            FROM brands
+            WHERE user_id = %s
+            """,
+            (user["id"],),
+            fetchone=True
+        )
+
+        rows = db_execute(
+            """
+            SELECT *
+            FROM collections
+            WHERE brand_id = %s
+            ORDER BY created_at DESC
+            """,
+            (brand["id"],),
+            fetchall=True
+        )
+
+    else:
+        return jsonify({
+            "success": False,
+            "error": "Unauthorized."
+        }), 403
+
+    return jsonify({
+        "success": True,
+        "collections": rows
+    })
+
+
+# ============================================================
+# COLLECTION DETAILS
+# ============================================================
+
+@app.route("/api/collection/<collection_id>")
+@login_required
+def collection_details(user, collection_id):
+
+    collection = db_execute(
+        """
+        SELECT *
+        FROM collections
+        WHERE collection_id = %s
+        """,
+        (collection_id,),
+        fetchone=True
+    )
+
+    if not collection:
+        return jsonify({
+            "success": False,
+            "error": "Collection not found."
+        }), 404
+
+    return jsonify({
+        "success": True,
+        "collection": collection
+    })
+
+
+# ============================================================
+# AGGREGATOR VERIFICATION
+# ============================================================
+
+@app.route("/api/collection/<collection_id>/verify", methods=["POST"])
+@login_required
+@roles_required("AGGREGATOR")
+def verify_collection(user, collection_id):
+
+    data = request.get_json() or {}
+
+    aggregator = db_execute(
+        """
+        SELECT *
+        FROM aggregators
+        WHERE user_id = %s
+        """,
+        (user["id"],),
+        fetchone=True
+    )
+
+    collection = db_execute(
+        """
+        SELECT *
+        FROM collections
+        WHERE collection_id = %s
+        """,
+        (collection_id,),
+        fetchone=True
+    )
+
+    if not collection:
+        return jsonify({
+            "success": False,
+            "error": "Collection not found."
+        }), 404
+
+    verified_weight = float(data.get("verified_weight", 0))
+    collector_weight = float(collection["collector_weight"] or 0)
+
+    if collector_weight <= 0:
+        return jsonify({
+            "success": False,
+            "error": "Invalid collector weight."
+        }), 400
+
+    difference = abs(
+        verified_weight - collector_weight
+    ) / collector_weight
+
+    if difference > WEIGHT_TOLERANCE:
+
+        db_execute(
+            """
+            INSERT INTO anomaly_flags
+            (
+                collection_id,
+                anomaly_type,
+                severity,
+                description
+            )
+            VALUES (%s,%s,%s,%s)
+            """,
+            (
+                collection["id"],
+                "WEIGHT_MISMATCH",
+                "HIGH",
+                f"Collector weight {collector_weight} kg vs "
+                f"aggregator weight {verified_weight} kg"
+            ),
+            commit=True
+        )
+
+        return jsonify({
+            "success": False,
+            "status": "FLAGGED",
+            "error": "Weight variance exceeds 20% tolerance.",
+            "collector_weight": collector_weight,
+            "aggregator_weight": verified_weight
+        }), 422
+
+    db_execute(
+        """
+        UPDATE collections
+        SET aggregator_id = %s,
+            aggregator_weight = %s,
+            status = 'AGGREGATOR_VERIFIED',
+            updated_at = NOW()
+        WHERE id = %s
+        """,
+        (
+            aggregator["id"],
+            verified_weight,
+            collection["id"]
+        ),
+        commit=True
+    )
+
+    db_execute(
+        """
+        INSERT INTO verification_records
+        (
+            collection_id,
+            verifier_user_id,
+            verification_type,
+            weight,
+            status,
+            notes
+        )
+        VALUES (%s,%s,%s,%s,%s,%s)
+        """,
+        (
+            collection["id"],
+            user["id"],
+            "AGGREGATOR",
+            verified_weight,
+            "VERIFIED",
+            data.get("notes")
+        ),
+        commit=True
+    )
+
+    audit(
+        user["id"],
+        user["role"],
+        "COLLECTION_VERIFIED",
+        "collection",
+        collection_id,
+        previous_status=collection["status"],
+        new_status="AGGREGATOR_VERIFIED"
+    )
+
+    return jsonify({
+        "success": True,
+        "status": "AGGREGATOR_VERIFIED",
+        "verified_weight": verified_weight
+    })
+
+
+# ============================================================
+# RECYCLER INCOMING
+# ============================================================
+
+@app.route("/api/recycler/incoming")
+@login_required
+@roles_required("RECYCLER")
+def recycler_incoming(user):
+
+    rows = db_execute(
+        """
+        SELECT *
+        FROM collections
+        WHERE status = 'AGGREGATOR_VERIFIED'
+        ORDER BY updated_at DESC
+        """,
+        fetchall=True
+    )
+
+    return jsonify({
+        "success": True,
+        "incoming": rows
+    })
+
+
+# ============================================================
+# RECYCLER RECEIVE + EPR
+# ============================================================
+
+@app.route("/api/collection/<collection_id>/receive", methods=["POST"])
+@login_required
+@roles_required("RECYCLER")
+def receive_collection(user, collection_id):
+
+    data = request.get_json() or {}
+
+    recycler = db_execute(
+        """
+        SELECT *
+        FROM recyclers
+        WHERE user_id = %s
+        """,
+        (user["id"],),
+        fetchone=True
+    )
+
+    collection = db_execute(
+        """
+        SELECT *
+        FROM collections
+        WHERE collection_id = %s
+        """,
+        (collection_id,),
+        fetchone=True
+    )
+
+    if not collection:
+        return jsonify({
+            "success": False,
+            "error": "Collection not found."
+        }), 404
+
+    if collection["status"] != "AGGREGATOR_VERIFIED":
+        return jsonify({
+            "success": False,
+            "error": "Recycler receipt requires aggregator verification first."
+        }), 409
+
+    received_weight = float(data.get("received_weight", 0))
+    aggregator_weight = float(collection["aggregator_weight"] or 0)
+
+    if received_weight <= 0:
+        return jsonify({
+            "success": False,
+            "error": "Invalid received weight."
+        }), 400
+
+    if aggregator_weight <= 0:
+        return jsonify({
+            "success": False,
+            "error": "Aggregator weight is missing."
+        }), 400
+
+    difference = abs(
+        received_weight - aggregator_weight
+    ) / aggregator_weight
+
+    if difference > WEIGHT_TOLERANCE:
+
+        db_execute(
+            """
+            INSERT INTO anomaly_flags
+            (
+                collection_id,
+                anomaly_type,
+                severity,
+                description
+            )
+            VALUES (%s,%s,%s,%s)
+            """,
+            (
+                collection["id"],
+                "RECYCLER_WEIGHT_MISMATCH",
+                "HIGH",
+                f"Aggregator weight {aggregator_weight} kg vs "
+                f"recycler weight {received_weight} kg"
+            ),
+            commit=True
+        )
+
+        return jsonify({
+            "success": False,
+            "status": "FLAGGED",
+            "error": "Recycler weight variance exceeds 20% tolerance."
+        }), 422
+
+    if not collection["image_hash"]:
+        return jsonify({
+            "success": False,
+            "error": "Collection evidence is missing."
+        }), 400
+
+    conn = get_db()
+
+    try:
+        cur = conn.cursor()
+
+        cur.execute(
+            """
+            UPDATE collections
+            SET recycler_id = %s,
+                recycler_weight = %s,
+                receiving_photo = %s,
+                status = 'RECYCLER_RECEIVED',
+                updated_at = NOW()
+            WHERE id = %s
+            """,
+            (
+                recycler["id"],
+                received_weight,
+                data.get("receiving_photo"),
+                collection["id"]
+            )
+        )
+
+        epr_id = generate_id("EPR")
+
+        cur.execute(
+            """
+            INSERT INTO epr_records
+            (
+                epr_id,
+                collection_id,
+                brand_id,
+                recycler_id,
+                verified_weight,
+                material,
+                status
+            )
+            VALUES (%s,%s,%s,%s,%s,%s,'EPR_VERIFIED')
+            """,
+            (
+                epr_id,
+                collection["id"],
+                collection["brand_id"],
+                recycler["id"],
+                received_weight,
+                collection["item_category"]
+            )
+        )
+
+        cur.execute(
+            """
+            UPDATE collections
+            SET status = 'EPR_VERIFIED'
+            WHERE id = %s
+            """,
+            (collection["id"],)
+        )
+
+        conn.commit()
+        cur.close()
+
+    except Exception as e:
+        conn.rollback()
+
+        return jsonify({
+            "success": False,
+            "error": str(e)
+        }), 500
+
+    finally:
+        conn.close()
+
+    # ========================================================
+    # REWARDS
+    # ========================================================
+
+    collector = db_execute(
+        """
+        SELECT user_id
+        FROM collectors
+        WHERE id = %s
+        """,
+        (collection["collector_id"],),
+        fetchone=True
+    )
+
+    customer = db_execute(
+        """
+        SELECT user_id
+        FROM customers
+        WHERE id = %s
+        """,
+        (collection["customer_id"],),
+        fetchone=True
+    )
+
+    collector_points = round(
+        received_weight * COLLECTOR_POINTS_PER_KG,
+        2
+    )
+
+    customer_points = round(
+        received_weight * CUSTOMER_POINTS_PER_KG,
+        2
+    )
+
+    if collector:
+        db_execute(
+            """
+            INSERT INTO reward_transactions
+            (
+                user_id,
+                collection_id,
+                role,
+                points,
+                transaction_type,
+                description
+            )
+            VALUES (%s,%s,%s,%s,%s,%s)
+            """,
+            (
+                collector["user_id"],
+                collection["id"],
+                "COLLECTOR",
+                collector_points,
+                "CREDIT",
+                f"Verified e-waste reward for {collection_id}"
+            ),
+            commit=True
+        )
+
+        notify(
+            collector["user_id"],
+            "Reward Credited",
+            f"{collector_points} points credited for {collection_id}."
+        )
+
+    if customer:
+        db_execute(
+            """
+            INSERT INTO reward_transactions
+            (
+                user_id,
+                collection_id,
+                role,
+                points,
+                transaction_type,
+                description
+            )
+            VALUES (%s,%s,%s,%s,%s,%s)
+            """,
+            (
+                customer["user_id"],
+                collection["id"],
+                "USER",
+                customer_points,
+                "CREDIT",
+                f"Responsible disposal reward for {collection_id}"
+            ),
+            commit=True
+        )
+
+        notify(
+            customer["user_id"],
+            "Reward Credited",
+            f"{customer_points} points credited for your e-waste."
+        )
+
+    audit(
+        user["id"],
+        user["role"],
+        "EPR_GENERATED",
+        "epr",
+        epr_id,
+        previous_status="AGGREGATOR_VERIFIED",
+        new_status="EPR_VERIFIED"
+    )
+
+    return jsonify({
+        "success": True,
+        "status": "EPR_VERIFIED",
+        "epr_id": epr_id,
+        "verified_weight": received_weight,
+        "collector_points": collector_points,
+        "customer_points": customer_points
+    })
+
+
+# ============================================================
+# EPR
+# ============================================================
+
+@app.route("/api/epr/<epr_id>")
+@login_required
+def get_epr(user, epr_id):
+
+    epr = db_execute(
+        """
+        SELECT
+            e.*,
+            b.brand_name,
+            r.recycler_id
+        FROM epr_records e
+        LEFT JOIN brands b
+          ON e.brand_id = b.id
+        LEFT JOIN recyclers r
+          ON e.recycler_id = r.id
+        WHERE e.epr_id = %s
+        """,
+        (epr_id,),
+        fetchone=True
+    )
+
+    if not epr:
+        return jsonify({
+            "success": False,
+            "error": "EPR record not found."
+        }), 404
+
+    if user["role"] == "BRAND_PRO":
+
+        brand = db_execute(
+            """
+            SELECT id
+            FROM brands
+            WHERE user_id = %s
+            """,
+            (user["id"],),
+            fetchone=True
+        )
+
+        if not brand or epr["brand_id"] != brand["id"]:
+            return jsonify({
+                "success": False,
+                "error": "Unauthorized EPR access."
+            }), 403
+
+    return jsonify({
+        "success": True,
+        "epr": epr
+    })
+
+
+# ============================================================
+# BRAND DASHBOARD
+# ============================================================
+
+@app.route("/api/brand/dashboard")
+@login_required
+@roles_required("BRAND_PRO")
+def brand_dashboard(user):
+
+    brand = db_execute(
+        """
+        SELECT *
+        FROM brands
+        WHERE user_id = %s
+        """,
+        (user["id"],),
+        fetchone=True
+    )
+
+    if not brand:
+        return jsonify({
+            "success": False,
+            "error": "Brand profile not found."
+        }), 404
+
+    verified = db_execute(
+        """
+        SELECT COALESCE(SUM(verified_weight), 0) AS total
+        FROM epr_records
+        WHERE brand_id = %s
+          AND status = 'EPR_VERIFIED'
+        """,
+        (brand["id"],),
+        fetchone=True
+    )
+
+    verified_weight = float(verified["total"] or 0)
+    obligation = float(
+        brand["epr_obligation"] or DEMO_EPR_OBLIGATION
+    )
+
+    remaining = max(
+        obligation - verified_weight,
+        0
+    )
+
+    compliance = (
+        (verified_weight / obligation) * 100
+        if obligation > 0 else 0
+    )
+
+    records = db_execute(
+        """
+        SELECT *
+        FROM epr_records
+        WHERE brand_id = %s
+        ORDER BY created_at DESC
+        """,
+        (brand["id"],),
+        fetchall=True
+    )
+
+    return jsonify({
+        "success": True,
+        "brand": {
+            "brand_id": brand["brand_id"],
+            "brand_name": brand["brand_name"],
+            "organization_name": brand["organization_name"]
         },
+        "epr": {
+            "obligation": obligation,
+            "verified": round(verified_weight, 2),
+            "remaining": round(remaining, 2),
+            "compliance_percentage": round(compliance, 2)
+        },
+        "records": records
+    })
 
-        function () {
 
-            toast(
-                "GPS permission unavailable",
-                "error"
-            );
+@app.route("/api/brand/epr")
+@login_required
+@roles_required("BRAND_PRO")
+def brand_epr(user):
+
+    brand = db_execute(
+        """
+        SELECT id
+        FROM brands
+        WHERE user_id = %s
+        """,
+        (user["id"],),
+        fetchone=True
+    )
+
+    rows = db_execute(
+        """
+        SELECT *
+        FROM epr_records
+        WHERE brand_id = %s
+        ORDER BY created_at DESC
+        """,
+        (brand["id"],),
+        fetchall=True
+    )
+
+    return jsonify({
+        "success": True,
+        "epr_records": rows
+    })
+
+
+# ============================================================
+# EPR DOCUMENT METADATA
+# ============================================================
+
+@app.route("/api/brand/epr-documents", methods=["POST"])
+@login_required
+@roles_required("BRAND_PRO")
+def create_epr_document(user):
+
+    data = request.get_json() or {}
+
+    brand = db_execute(
+        """
+        SELECT *
+        FROM brands
+        WHERE user_id = %s
+        """,
+        (user["id"],),
+        fetchone=True
+    )
+
+    if not brand:
+        return jsonify({
+            "success": False,
+            "error": "Brand profile not found."
+        }), 404
+
+    verified = db_execute(
+        """
+        SELECT COALESCE(SUM(verified_weight),0) AS total
+        FROM epr_records
+        WHERE brand_id = %s
+          AND status = 'EPR_VERIFIED'
+        """,
+        (brand["id"],),
+        fetchone=True
+    )
+
+    verified_weight = float(verified["total"] or 0)
+    obligation = float(brand["epr_obligation"] or 0)
+
+    compliance = (
+        verified_weight / obligation * 100
+        if obligation > 0 else 0
+    )
+
+    document_id = generate_id("EPR-DOC")
+
+    db_execute(
+        """
+        INSERT INTO epr_documents
+        (
+            document_id,
+            brand_id,
+            financial_year,
+            epr_obligation,
+            verified_weight,
+            compliance_percentage,
+            status
+        )
+        VALUES (%s,%s,%s,%s,%s,%s,'GENERATED')
+        """,
+        (
+            document_id,
+            brand["id"],
+            data.get("financial_year", "2026-27"),
+            obligation,
+            verified_weight,
+            compliance
+        ),
+        commit=True
+    )
+
+    audit(
+        user["id"],
+        user["role"],
+        "EPR_DOCUMENT_CREATED",
+        "epr_document",
+        document_id,
+        new_status="GENERATED"
+    )
+
+    return jsonify({
+        "success": True,
+        "document_id": document_id,
+        "brand": brand["brand_name"],
+        "verified_weight": verified_weight,
+        "compliance_percentage": round(compliance, 2)
+    }), 201
+
+
+@app.route("/api/brand/epr-documents")
+@login_required
+@roles_required("BRAND_PRO")
+def epr_documents(user):
+
+    brand = db_execute(
+        """
+        SELECT id
+        FROM brands
+        WHERE user_id = %s
+        """,
+        (user["id"],),
+        fetchone=True
+    )
+
+    rows = db_execute(
+        """
+        SELECT *
+        FROM epr_documents
+        WHERE brand_id = %s
+        ORDER BY created_at DESC
+        """,
+        (brand["id"],),
+        fetchall=True
+    )
+
+    return jsonify({
+        "success": True,
+        "documents": rows
+    })
+
+
+# ============================================================
+# REWARDS
+# ============================================================
+
+@app.route("/api/rewards/<int:user_id>")
+@login_required
+def rewards(user, user_id):
+
+    # Users can only see their own rewards.
+    # Aggregators/recyclers/brands do not get arbitrary access.
+
+    if user["id"] != user_id:
+        return jsonify({
+            "success": False,
+            "error": "Unauthorized."
+        }), 403
+
+    rows = db_execute(
+        """
+        SELECT *
+        FROM reward_transactions
+        WHERE user_id = %s
+        ORDER BY created_at DESC
+        """,
+        (user_id,),
+        fetchall=True
+    )
+
+    total = sum(
+        float(row["points"] or 0)
+        for row in rows
+        if row["transaction_type"] == "CREDIT"
+    )
+
+    redeemed = sum(
+        float(row["points"] or 0)
+        for row in rows
+        if row["transaction_type"] == "REDEEM"
+    )
+
+    available = total - redeemed
+
+    return jsonify({
+        "success": True,
+        "points": {
+            "total_earned": round(total, 2),
+            "redeemed": round(redeemed, 2),
+            "available": round(available, 2),
+            "demo_cash_value": round(available * 0.10, 2)
+        },
+        "history": rows
+    })
+
+
+@app.route("/api/rewards/redeem", methods=["POST"])
+@login_required
+def redeem_reward(user):
+
+    data = request.get_json() or {}
+
+    points = float(data.get("points", 0))
+
+    if points <= 0:
+        return jsonify({
+            "success": False,
+            "error": "Invalid points."
+        }), 400
+
+    existing = db_execute(
+        """
+        SELECT COALESCE(SUM(
+            CASE
+                WHEN transaction_type = 'CREDIT'
+                THEN points
+                ELSE 0
+            END
+        ),0) -
+        COALESCE(SUM(
+            CASE
+                WHEN transaction_type = 'REDEEM'
+                THEN points
+                ELSE 0
+            END
+        ),0) AS available
+        FROM reward_transactions
+        WHERE user_id = %s
+        """,
+        (user["id"],),
+        fetchone=True
+    )
+
+    available = float(existing["available"] or 0)
+
+    if points > available:
+        return jsonify({
+            "success": False,
+            "error": "Insufficient reward points."
+        }), 400
+
+    db_execute(
+        """
+        INSERT INTO reward_transactions
+        (
+            user_id,
+            role,
+            points,
+            transaction_type,
+            description
+        )
+        VALUES (%s,%s,%s,'REDEEM',%s)
+        """,
+        (
+            user["id"],
+            user["role"],
+            points,
+            f"Demo redemption via {data.get('method', 'UPI')}"
+        ),
+        commit=True
+    )
+
+    return jsonify({
+        "success": True,
+        "message": "Demo redemption recorded.",
+        "points_redeemed": points,
+        "method": data.get("method", "UPI"),
+        "note": "No real money transfer is performed."
+    })
+
+
+# ============================================================
+# NOTIFICATIONS
+# ============================================================
+
+@app.route("/api/notifications")
+@login_required
+def notifications(user):
+
+    rows = db_execute(
+        """
+        SELECT *
+        FROM notifications
+        WHERE user_id = %s
+        ORDER BY created_at DESC
+        """,
+        (user["id"],),
+        fetchall=True
+    )
+
+    return jsonify({
+        "success": True,
+        "notifications": rows
+    })
+
+
+@app.route("/api/notifications/<int:notification_id>/read",
+           methods=["POST"])
+@login_required
+def mark_notification_read(user, notification_id):
+
+    db_execute(
+        """
+        UPDATE notifications
+        SET is_read = TRUE
+        WHERE id = %s
+          AND user_id = %s
+        """,
+        (
+            notification_id,
+            user["id"]
+        ),
+        commit=True
+    )
+
+    return jsonify({
+        "success": True
+    })
+
+
+# ============================================================
+# AGGREGATOR DASHBOARD
+# ============================================================
+
+@app.route("/api/dashboard/aggregator")
+@login_required
+@roles_required("AGGREGATOR")
+def aggregator_dashboard(user):
+
+    stats = db_execute(
+        """
+        SELECT
+            COUNT(*) FILTER (
+                WHERE status = 'COLLECTED'
+            ) AS pending_verification,
+
+            COUNT(*) FILTER (
+                WHERE status = 'AGGREGATOR_VERIFIED'
+            ) AS verified_collections,
+
+            COUNT(*) FILTER (
+                WHERE status = 'IN_TRANSIT'
+            ) AS material_in_transit,
+
+            COALESCE(
+                SUM(
+                    COALESCE(aggregator_weight,0)
+                ),
+                0
+            ) AS total_verified_weight
+        FROM collections
+        """,
+        fetchone=True
+    )
+
+    collectors = db_execute(
+        """
+        SELECT COUNT(*) AS total
+        FROM collectors
+        """,
+        fetchone=True
+    )
+
+    return jsonify({
+        "success": True,
+        "stats": {
+            "pending_verification": stats["pending_verification"],
+            "verified_collections": stats["verified_collections"],
+            "material_in_transit": stats["material_in_transit"],
+            "total_verified_weight": float(
+                stats["total_verified_weight"] or 0
+            ),
+            "active_collectors": collectors["total"]
         }
-    );
-}
-
-
-/* ============================================================
-   VOICE
-============================================================ */
-
-function startVoice() {
-
-    const SpeechRecognition =
-        window.SpeechRecognition
-        || window.webkitSpeechRecognition;
-
-    if (!SpeechRecognition) {
-
-        toast(
-            "Speech recognition is not supported in this browser",
-            "error"
-        );
-
-        return;
-    }
-
-    const recognition =
-        new SpeechRecognition();
-
-    const localeMap = {
-
-        en: "en-IN",
-        hi: "hi-IN",
-        ta: "ta-IN",
-        te: "te-IN",
-        kn: "kn-IN",
-        ml: "ml-IN",
-        bn: "bn-IN",
-        mr: "mr-IN",
-        gu: "gu-IN",
-        pa: "pa-IN",
-        or: "or-IN",
-        as: "as-IN",
-        ur: "ur-IN"
-    };
-
-    recognition.lang =
-        localeMap[currentLanguage]
-        || "en-IN";
-
-    recognition.interimResults =
-        false;
-
-    recognition.onresult =
-        function (event) {
-
-            const text =
-                event
-                    .results[0][0]
-                    .transcript;
-
-            document.getElementById(
-                "colHandover"
-            ).value = text;
-
-            toast(
-                "Voice captured: "
-                + text
-            );
-        };
-
-    recognition.onerror =
-        function () {
-
-            toast(
-                "Voice recognition failed",
-                "error"
-            );
-        };
-
-    recognition.start();
-}
-
-
-/* ============================================================
-   SUBMIT COLLECTION
-============================================================ */
-
-async function submitCollection() {
-
-    try {
-
-        const data =
-            await api(
-                "/api/collection",
-                {
-
-                    method: "POST",
-
-                    body:
-                        JSON.stringify({
-
-                            handover_id:
-                                document
-                                    .getElementById(
-                                        "colHandover"
-                                    )
-                                    .value,
-
-                            weight:
-                                document
-                                    .getElementById(
-                                        "colWeight"
-                                    )
-                                    .value,
-
-                            gps:
-                                document
-                                    .getElementById(
-                                        "colGps"
-                                    )
-                                    .value,
-
-                            image_hash:
-                                document
-                                    .getElementById(
-                                        "colHash"
-                                    )
-                                    .value
-                        })
-                }
-            );
-
-        toast(
-            "Collection recorded: "
-            + data.collection.collection_id
-        );
-
-        await renderDashboard();
-
-    } catch (error) {
-
-        toast(
-            error.message,
-            "error"
-        );
-    }
-}
-
-
-/* ============================================================
-   COLLECTION TABLE
-============================================================ */
-
-function collectionTable(
-    rows
-) {
-
-    if (!rows.length) {
-
-        return `
-            <p class="small">
-                ${t("noRecords")}
-            </p>
-        `;
-    }
-
-    return `
-
-        <div class="table-wrap">
-
-            <table>
-
-                <thead>
-
-                    <tr>
-
-                        <th>
-                            ID
-                        </th>
-
-                        <th>
-                            ${t("handoverId")}
-                        </th>
-
-                        <th>
-                            ${t("weight")}
-                        </th>
-
-                        <th>
-                            ${t("status")}
-                        </th>
-
-                        <th>
-                            Anomaly
-                        </th>
-
-                    </tr>
-
-                </thead>
-
-
-                <tbody>
-
-                    ${rows.map(
-                        function (row) {
-
-                            return `
-
-                                <tr>
-
-                                    <td>
-                                        ${escapeHTML(
-                                            row.collection_id
-                                        )}
-                                    </td>
-
-                                    <td>
-                                        ${escapeHTML(
-                                            row.handover_id
-                                        )}
-                                    </td>
-
-                                    <td>
-                                        ${escapeHTML(
-                                            row.collector_weight
-                                        )}
-                                        kg
-                                    </td>
-
-                                    <td>
-
-                                        <span
-                                            class="status">
-
-                                            ${escapeHTML(
-                                                row.status
-                                            )}
-
-                                        </span>
-
-                                    </td>
-
-                                    <td>
-                                        ${
-                                            row.anomaly
-                                                ? "⚠️"
-                                                : "—"
-                                        }
-                                    </td>
-
-                                </tr>
-
-                            `;
-                        }
-                    ).join("")}
-
-                </tbody>
-
-            </table>
-
-        </div>
-
-    `;
-}
-
-
-/* ============================================================
-   AGGREGATOR DASHBOARD
-============================================================ */
-
-async function aggregatorDashboard() {
-
-    const collections =
-        await api(
-            "/api/collections"
-        );
-
-    return `
-
-        <div class="panel">
-
-            <h2>
-                ${t("verifyCollection")}
-            </h2>
-
-
-            <div class="notice">
-
-                Verify the physical weight
-                before sending material
-                to the recycler.
-
-                Large differences are
-                flagged for review.
-
-            </div>
-
-
-            <div class="table-wrap">
-
-                <table>
-
-                    <thead>
-
-                        <tr>
-
-                            <th>
-                                ID
-                            </th>
-
-                            <th>
-                                Collector
-                            </th>
-
-                            <th>
-                                Collector kg
-                            </th>
-
-                            <th>
-                                Verified kg
-                            </th>
-
-                            <th>
-                                Status
-                            </th>
-
-                            <th>
-                                Action
-                            </th>
-
-                        </tr>
-
-                    </thead>
-
-
-                    <tbody>
-
-                        ${
-                            collections.length
-
-                            ? collections.map(
-                                function (row) {
-
-                                    return `
-
-                                        <tr>
-
-                                            <td>
-                                                ${escapeHTML(
-                                                    row.collection_id
-                                                )}
-                                            </td>
-
-                                            <td>
-                                                ${escapeHTML(
-                                                    row.collector_id
-                                                )}
-                                            </td>
-
-                                            <td>
-                                                ${escapeHTML(
-                                                    row.collector_weight
-                                                )}
-                                            </td>
-
-                                            <td>
-
-                                                <input
-                                                    id="vw-${escapeHTML(
-                                                        row.collection_id
-                                                    )}"
-                                                    type="number"
-                                                    step="0.1"
-                                                    value="${
-                                                        row.verified_weight
-                                                        || row.collector_weight
-                                                        || ""
-                                                    }">
-
-                                            </td>
-
-                                            <td>
-                                                ${escapeHTML(
-                                                    row.status
-                                                )}
-                                            </td>
-
-                                            <td>
-
-                                                <button
-                                                    class="btn"
-                                                    onclick="verifyCollection('${escapeHTML(
-                                                        row.collection_id
-                                                    )}')">
-
-                                                    ${t("verifyCollection")}
-
-                                                </button>
-
-                                            </td>
-
-                                        </tr>
-
-                                    `;
-                                }
-                            ).join("")
-
-                            : `
-
-                                <tr>
-
-                                    <td
-                                        colspan="6">
-
-                                        ${t("noRecords")}
-
-                                    </td>
-
-                                </tr>
-
-                            `
-                        }
-
-                    </tbody>
-
-                </table>
-
-            </div>
-
-        </div>
-
-
-        ${chain()}
-
-    `;
-}
-
-
-/* ============================================================
-   AGGREGATOR VERIFY
-============================================================ */
-
-async function verifyCollection(
-    collectionId
-) {
-
-    try {
-
-        const input =
-            document.getElementById(
-                "vw-" + collectionId
-            );
-
-        await api(
-            "/api/collection/"
-            + collectionId
-            + "/verify",
-            {
-
-                method: "POST",
-
-                body:
-                    JSON.stringify({
-
-                        verified_weight:
-                            input.value
-                    })
-            }
-        );
-
-        toast(
-            "Aggregator verification complete"
-        );
-
-        await renderDashboard();
-
-    } catch (error) {
-
-        toast(
-            error.message,
-            "error"
-        );
-    }
-}
-
-
-/* ============================================================
-   RECYCLER DASHBOARD
-============================================================ */
-
-async function recyclerDashboard() {
-
-    const collections =
-        await api(
-            "/api/collections"
-        );
-
-    return `
-
-        <div class="panel">
-
-            <h2>
-                ${t("confirmReceipt")}
-            </h2>
-
-
-            <div class="notice">
-
-                Recycler confirmation is the
-                final gate before EPR quantity
-                and rewards are generated.
-
-            </div>
-
-
-            <div class="table-wrap">
-
-                <table>
-
-                    <thead>
-
-                        <tr>
-
-                            <th>
-                                ID
-                            </th>
-
-                            <th>
-                                Aggregator kg
-                            </th>
-
-                            <th>
-                                Final kg
-                            </th>
-
-                            <th>
-                                Status
-                            </th>
-
-                            <th>
-                                Action
-                            </th>
-
-                        </tr>
-
-                    </thead>
-
-
-                    <tbody>
-
-                        ${
-                            collections.length
-
-                            ? collections.map(
-                                function (row) {
-
-                                    return `
-
-                                        <tr>
-
-                                            <td>
-                                                ${escapeHTML(
-                                                    row.collection_id
-                                                )}
-                                            </td>
-
-                                            <td>
-                                                ${escapeHTML(
-                                                    row.verified_weight
-                                                    || "—"
-                                                )}
-                                            </td>
-
-                                            <td>
-
-                                                <input
-                                                    id="rw-${escapeHTML(
-                                                        row.collection_id
-                                                    )}"
-                                                    type="number"
-                                                    step="0.1"
-                                                    value="${
-                                                        row.recycler_weight
-                                                        || row.verified_weight
-                                                        || ""
-                                                    }">
-
-                                            </td>
-
-                                            <td>
-                                                ${escapeHTML(
-                                                    row.status
-                                                )}
-                                            </td>
-
-                                            <td>
-
-                                                <button
-                                                    class="btn"
-                                                    onclick="receiveCollection('${escapeHTML(
-                                                        row.collection_id
-                                                    )}')">
-
-                                                    ${t("confirmReceipt")}
-
-                                                </button>
-
-                                            </td>
-
-                                        </tr>
-
-                                    `;
-                                }
-                            ).join("")
-
-                            : `
-
-                                <tr>
-
-                                    <td
-                                        colspan="5">
-
-                                        ${t("noRecords")}
-
-                                    </td>
-
-                                </tr>
-
-                            `
-                        }
-
-                    </tbody>
-
-                </table>
-
-            </div>
-
-        </div>
-
-
-        ${chain()}
-
-    `;
-}
-
-
-/* ============================================================
-   RECYCLER RECEIPT
-============================================================ */
-
-async function receiveCollection(
-    collectionId
-) {
-
-    try {
-
-        const input =
-            document.getElementById(
-                "rw-" + collectionId
-            );
-
-        const data =
-            await api(
-                "/api/collection/"
-                + collectionId
-                + "/receive",
-                {
-
-                    method: "POST",
-
-                    body:
-                        JSON.stringify({
-
-                            recycler_weight:
-                                input.value
-                        })
-                }
-            );
-
-        toast(
-            "EPR "
-            + data.epr.epr_id
-            + " generated • Rewards credited"
-        );
-
-        await renderDashboard();
-
-    } catch (error) {
-
-        toast(
-            error.message,
-            "error"
-        );
-    }
-}
-
-
-/* ============================================================
-   BRAND DASHBOARD
-============================================================ */
-
-async function brandDashboard() {
-
-    const brand =
-        await api(
-            "/api/brand/dashboard"
-        );
-
-    const percentage =
-        Math.min(
-            brand.compliance_percent,
-            100
-        );
-
-    return `
-
-        <div class="notice">
-
-            ${t("demoNotice")}
-
-        </div>
-
-
-        <div class="grid grid-4">
-
-            ${statCard(
-                t("eprObligation"),
-                brand.obligation_kg
-                + " kg"
-            )}
-
-            ${statCard(
-                t("verifiedEPR"),
-                brand.verified_epr_kg
-                + " kg"
-            )}
-
-            ${statCard(
-                t("remaining"),
-                brand.remaining_kg
-                + " kg"
-            )}
-
-            ${statCard(
-                t("compliance"),
-                brand.compliance_percent
-                + "%"
-            )}
-
-        </div>
-
-
-        <div
-            class="panel"
-            style="margin-top:16px">
-
-            <h2>
-                ${t("eprCompliance")}
-            </h2>
-
-
-            <div class="progress">
-
-                <div
-                    style="
-                        width:${percentage}%;
-                    ">
-                </div>
-
-            </div>
-
-
-            <p class="small">
-
-                ${brand.verified_epr_kg}
-                kg /
-                ${brand.obligation_kg}
-                kg verified
-
-            </p>
-
-
-            <div
-                class="table-wrap"
-                style="margin-top:15px">
-
-                <table>
-
-                    <thead>
-
-                        <tr>
-
-                            <th>
-                                EPR ID
-                            </th>
-
-                            <th>
-                                Collection
-                            </th>
-
-                            <th>
-                                Weight
-                            </th>
-
-                            <th>
-                                Status
-                            </th>
-
-                        </tr>
-
-                    </thead>
-
-
-                    <tbody>
-
-                        ${
-                            brand.epr_records.length
-
-                            ? brand.epr_records.map(
-                                function (epr) {
-
-                                    return `
-
-                                        <tr>
-
-                                            <td>
-                                                ${escapeHTML(
-                                                    epr.epr_id
-                                                )}
-                                            </td>
-
-                                            <td>
-                                                ${escapeHTML(
-                                                    epr.collection_id
-                                                )}
-                                            </td>
-
-                                            <td>
-                                                ${escapeHTML(
-                                                    epr.weight_kg
-                                                )}
-                                                kg
-                                            </td>
-
-                                            <td>
-                                                ${escapeHTML(
-                                                    epr.status
-                                                )}
-                                            </td>
-
-                                        </tr>
-
-                                    `;
-                                }
-                            ).join("")
-
-                            : `
-
-                                <tr>
-
-                                    <td
-                                        colspan="4">
-
-                                        ${t("noRecords")}
-
-                                    </td>
-
-                                </tr>
-
-                            `
-                        }
-
-                    </tbody>
-
-                </table>
-
-            </div>
-
-        </div>
-
-
-        ${chain()}
-
-    `;
-}
-
-
-/* ============================================================
-   ADMIN DASHBOARD
-============================================================ */
-
-async function adminDashboard() {
-
-    const dashboard =
-        await api(
-            "/api/dashboard"
-        );
-
-    const users =
-        await api(
-            "/api/admin/users"
-        );
-
-    const anomalies =
-        await api(
-            "/api/admin/anomalies"
-        );
-
-    const withdrawals =
-        await api(
-            "/api/withdrawals"
-        );
-
-    const audit =
-        await api(
-            "/api/admin/audit"
-        );
-
-    const system =
-        dashboard.system;
-
-    return `
-
-        <div class="grid grid-4">
-
-            ${statCard(
-                t("totalUsers"),
-                system.total_users
-            )}
-
-            ${statCard(
-                t("totalHandovers"),
-                system.total_handovers
-            )}
-
-            ${statCard(
-                t("totalCollections"),
-                system.total_collections
-            )}
-
-            ${statCard(
-                t("verifiedCollections"),
-                system.verified_collections
-            )}
-
-            ${statCard(
-                t("verifiedWeight"),
-                system.verified_weight_kg
-                + " kg"
-            )}
-
-            ${statCard(
-                t("openAnomalies"),
-                system.open_anomalies
-            )}
-
-            ${statCard(
-                t("pendingWithdrawals"),
-                system.pending_withdrawals
-            )}
-
-            ${statCard(
-                t("rewardPoints"),
-                system.reward_points_issued
-            )}
-
-        </div>
-
-
-        ${chain()}
-
-
-        <div
-            class="tabs"
-            style="margin-top:18px">
-
-            <button
-                class="tab active"
-                onclick="adminTab('users', this)">
-
-                ${t("users")}
-
-            </button>
-
-
-            <button
-                class="tab"
-                onclick="adminTab('anomalies', this)">
-
-                ${t("anomalies")}
-
-            </button>
-
-
-            <button
-                class="tab"
-                onclick="adminTab('withdrawals', this)">
-
-                ${t("withdrawalHistory")}
-
-            </button>
-
-
-            <button
-                class="tab"
-                onclick="adminTab('audit', this)">
-
-                ${t("audit")}
-
-            </button>
-
-        </div>
-
-
-        <div id="adminTabContent">
-
-            ${adminUsersHTML(users)}
-
-        </div>
-
-
-        <div
-            class="small"
-            style="margin-top:14px">
-
-            ${t("noRealMoney")}
-
-        </div>
-
-    `;
-}
-
-
-/* ============================================================
-   ADMIN USERS
-============================================================ */
-
-function adminUsersHTML(
-    users
-) {
-
-    return `
-
-        <div class="panel">
-
-            <h2>
-                ${t("users")}
-            </h2>
-
-
-            <div class="table-wrap">
-
-                <table>
-
-                    <thead>
-
-                        <tr>
-
-                            <th>
-                                ID
-                            </th>
-
-                            <th>
-                                Name
-                            </th>
-
-                            <th>
-                                Role
-                            </th>
-
-                            <th>
-                                Status
-                            </th>
-
-                            <th>
-                                Action
-                            </th>
-
-                        </tr>
-
-                    </thead>
-
-
-                    <tbody>
-
-                        ${users.map(
-                            function (user) {
-
-                                return `
-
-                                    <tr>
-
-                                        <td>
-                                            ${escapeHTML(
-                                                user.user_id
-                                            )}
-                                        </td>
-
-                                        <td>
-                                            ${escapeHTML(
-                                                user.name
-                                            )}
-                                        </td>
-
-                                        <td>
-                                            ${escapeHTML(
-                                                user.role
-                                            )}
-                                        </td>
-
-                                        <td>
-
-                                            ${
-                                                user.active
-                                                    ? t("active")
-                                                    : t("inactive")
-                                            }
-
-                                        </td>
-
-                                        <td>
-
-                                            <button
-                                                class="btn secondary"
-                                                onclick="toggleUser('${escapeHTML(
-                                                    user.user_id
-                                                )}')">
-
-                                                ${t("toggle")}
-
-                                            </button>
-
-                                        </td>
-
-                                    </tr>
-
-                                `;
-                            }
-                        ).join("")}
-
-                    </tbody>
-
-                </table>
-
-            </div>
-
-        </div>
-
-    `;
-}
-
-
-/* ============================================================
-   ADMIN ANOMALIES
-============================================================ */
-
-function adminAnomaliesHTML(
-    anomalies
-) {
-
-    return `
-
-        <div class="panel">
-
-            <h2>
-                ${t("anomalies")}
-            </h2>
-
-
-            <div class="table-wrap">
-
-                <table>
-
-                    <thead>
-
-                        <tr>
-
-                            <th>
-                                ID
-                            </th>
-
-                            <th>
-                                Collection
-                            </th>
-
-                            <th>
-                                Reason
-                            </th>
-
-                            <th>
-                                Severity
-                            </th>
-
-                            <th>
-                                Status
-                            </th>
-
-                            <th>
-                                Action
-                            </th>
-
-                        </tr>
-
-                    </thead>
-
-
-                    <tbody>
-
-                        ${
-                            anomalies.length
-
-                            ? anomalies.map(
-                                function (anomaly) {
-
-                                    return `
-
-                                        <tr>
-
-                                            <td>
-                                                ${escapeHTML(
-                                                    anomaly.anomaly_id
-                                                )}
-                                            </td>
-
-                                            <td>
-                                                ${escapeHTML(
-                                                    anomaly.collection_id
-                                                )}
-                                            </td>
-
-                                            <td>
-                                                ${escapeHTML(
-                                                    anomaly.reason
-                                                )}
-                                            </td>
-
-                                            <td>
-                                                ${escapeHTML(
-                                                    anomaly.severity
-                                                )}
-                                            </td>
-
-                                            <td>
-
-                                                ${
-                                                    anomaly.resolved
-                                                        ? "Resolved"
-                                                        : "Open"
-                                                }
-
-                                            </td>
-
-                                            <td>
-
-                                                ${
-                                                    anomaly.resolved
-
-                                                    ? "—"
-
-                                                    : `
-
-                                                        <button
-                                                            class="btn"
-                                                            onclick="resolveAnomaly('${escapeHTML(
-                                                                anomaly.anomaly_id
-                                                            )}')">
-
-                                                            ${t("resolve")}
-
-                                                        </button>
-
-                                                    `
-                                                }
-
-                                            </td>
-
-                                        </tr>
-
-                                    `;
-                                }
-                            ).join("")
-
-                            : `
-
-                                <tr>
-
-                                    <td
-                                        colspan="6">
-
-                                        ${t("noRecords")}
-
-                                    </td>
-
-                                </tr>
-
-                            `
-                        }
-
-                    </tbody>
-
-                </table>
-
-            </div>
-
-        </div>
-
-    `;
-}
-
-
-/* ============================================================
-   ADMIN WITHDRAWALS
-============================================================ */
-
-function adminWithdrawalsHTML(
-    withdrawals
-) {
-
-    return `
-
-        <div class="panel">
-
-            <h2>
-                ${t("withdrawalHistory")}
-            </h2>
-
-
-            <div class="table-wrap">
-
-                <table>
-
-                    <thead>
-
-                        <tr>
-
-                            <th>
-                                ID
-                            </th>
-
-                            <th>
-                                User
-                            </th>
-
-                            <th>
-                                Points
-                            </th>
-
-                            <th>
-                                Amount
-                            </th>
-
-                            <th>
-                                UPI
-                            </th>
-
-                            <th>
-                                Status
-                            </th>
-
-                            <th>
-                                Action
-                            </th>
-
-                        </tr>
-
-                    </thead>
-
-
-                    <tbody>
-
-                        ${
-                            withdrawals.length
-
-                            ? withdrawals.map(
-                                function (withdrawal) {
-
-                                    return `
-
-                                        <tr>
-
-                                            <td>
-                                                ${escapeHTML(
-                                                    withdrawal.withdrawal_id
-                                                )}
-                                            </td>
-
-                                            <td>
-                                                ${escapeHTML(
-                                                    withdrawal.user_id
-                                                )}
-                                            </td>
-
-                                            <td>
-                                                ${escapeHTML(
-                                                    withdrawal.points
-                                                )}
-                                            </td>
-
-                                            <td>
-                                                ₹${escapeHTML(
-                                                    withdrawal.amount
-                                                )}
-                                            </td>
-
-                                            <td>
-                                                ${escapeHTML(
-                                                    withdrawal.upi_id
-                                                )}
-                                            </td>
-
-                                            <td>
-                                                ${escapeHTML(
-                                                    withdrawal.status
-                                                )}
-                                            </td>
-
-                                            <td>
-
-                                                ${
-                                                    withdrawal.status
-                                                    === "PENDING"
-
-                                                    ? `
-
-                                                        <button
-                                                            class="btn"
-                                                            onclick="approveWithdrawal('${escapeHTML(
-                                                                withdrawal.withdrawal_id
-                                                            )}')">
-
-                                                            ${t("approve")}
-
-                                                        </button>
-
-
-                                                        <button
-                                                            class="btn danger"
-                                                            onclick="rejectWithdrawal('${escapeHTML(
-                                                                withdrawal.withdrawal_id
-                                                            )}')">
-
-                                                            ${t("reject")}
-
-                                                        </button>
-
-                                                    `
-
-                                                    : "—"
-                                                }
-
-                                            </td>
-
-                                        </tr>
-
-                                    `;
-                                }
-                            ).join("")
-
-                            : `
-
-                                <tr>
-
-                                    <td
-                                        colspan="7">
-
-                                        ${t("noRecords")}
-
-                                    </td>
-
-                                </tr>
-
-                            `
-                        }
-
-                    </tbody>
-
-                </table>
-
-            </div>
-
-        </div>
-
-    `;
-}
-
-
-/* ============================================================
-   ADMIN AUDIT
-============================================================ */
-
-function adminAuditHTML(
-    logs
-) {
-
-    return `
-
-        <div class="panel">
-
-            <h2>
-                ${t("audit")}
-            </h2>
-
-
-            <div class="table-wrap">
-
-                <table>
-
-                    <thead>
-
-                        <tr>
-
-                            <th>
-                                Time
-                            </th>
-
-                            <th>
-                                Actor
-                            </th>
-
-                            <th>
-                                Action
-                            </th>
-
-                            <th>
-                                Entity
-                            </th>
-
-                            <th>
-                                Details
-                            </th>
-
-                        </tr>
-
-                    </thead>
-
-
-                    <tbody>
-
-                        ${logs.map(
-                            function (log) {
-
-                                return `
-
-                                    <tr>
-
-                                        <td>
-                                            ${new Date(
-                                                log.created_at
-                                            ).toLocaleString()}
-                                        </td>
-
-                                        <td>
-                                            ${escapeHTML(
-                                                log.actor_id
-                                            )}
-                                        </td>
-
-                                        <td>
-                                            ${escapeHTML(
-                                                log.action
-                                            )}
-                                        </td>
-
-                                        <td>
-                                            ${escapeHTML(
-                                                log.entity_type
-                                            )}
-                                            ${escapeHTML(
-                                                log.entity_id
-                                            )}
-                                        </td>
-
-                                        <td>
-                                            ${escapeHTML(
-                                                log.details
-                                            )}
-                                        </td>
-
-                                    </tr>
-
-                                `;
-                            }
-                        ).join("")}
-
-                    </tbody>
-
-                </table>
-
-            </div>
-
-        </div>
-
-    `;
-}
-
-
-/* ============================================================
-   ADMIN TABS
-============================================================ */
-
-async function adminTab(
-    which,
-    button
-) {
-
-    document
-        .querySelectorAll(".tab")
-        .forEach(
-            function (tab) {
-
-                tab.classList.remove(
-                    "active"
-                );
-            }
-        );
-
-    button.classList.add(
-        "active"
-    );
-
-    try {
-
-        if (
-            which === "users"
-        ) {
-
-            document.getElementById(
-                "adminTabContent"
-            ).innerHTML =
-                adminUsersHTML(
-                    await api(
-                        "/api/admin/users"
-                    )
-                );
+    })
+
+
+# ============================================================
+# COLLECTOR DASHBOARD
+# ============================================================
+
+@app.route("/api/dashboard/collector")
+@login_required
+@roles_required("COLLECTOR")
+def collector_dashboard(user):
+
+    collector = db_execute(
+        """
+        SELECT *
+        FROM collectors
+        WHERE user_id = %s
+        """,
+        (user["id"],),
+        fetchone=True
+    )
+
+    stats = db_execute(
+        """
+        SELECT
+            COUNT(*) AS total_collections,
+            COALESCE(
+                SUM(recycler_weight),
+                0
+            ) AS verified_weight
+        FROM collections
+        WHERE collector_id = %s
+        """,
+        (collector["id"],),
+        fetchone=True
+    )
+
+    reward = db_execute(
+        """
+        SELECT COALESCE(
+            SUM(
+                CASE
+                    WHEN transaction_type = 'CREDIT'
+                    THEN points
+                    ELSE -points
+                END
+            ),0
+        ) AS points
+        FROM reward_transactions
+        WHERE user_id = %s
+        """,
+        (user["id"],),
+        fetchone=True
+    )
+
+    return jsonify({
+        "success": True,
+        "stats": {
+            "total_collections": stats["total_collections"],
+            "verified_weight": float(
+                stats["verified_weight"] or 0
+            ),
+            "reward_points": float(
+                reward["points"] or 0
+            )
         }
+    })
 
 
-        if (
-            which === "anomalies"
-        ) {
+# ============================================================
+# CUSTOMER DASHBOARD
+# ============================================================
 
-            document.getElementById(
-                "adminTabContent"
-            ).innerHTML =
-                adminAnomaliesHTML(
-                    await api(
-                        "/api/admin/anomalies"
-                    )
-                );
+@app.route("/api/dashboard/user")
+@login_required
+@roles_required("USER")
+def user_dashboard(user):
+
+    customer = db_execute(
+        """
+        SELECT *
+        FROM customers
+        WHERE user_id = %s
+        """,
+        (user["id"],),
+        fetchone=True
+    )
+
+    stats = db_execute(
+        """
+        SELECT
+            COUNT(*) AS handovers
+        FROM handovers
+        WHERE customer_id = %s
+        """,
+        (customer["id"],),
+        fetchone=True
+    )
+
+    weight = db_execute(
+        """
+        SELECT COALESCE(
+            SUM(recycler_weight),0
+        ) AS verified
+        FROM collections
+        WHERE customer_id = %s
+          AND status = 'EPR_VERIFIED'
+        """,
+        (customer["id"],),
+        fetchone=True
+    )
+
+    rewards_data = db_execute(
+        """
+        SELECT COALESCE(
+            SUM(
+                CASE
+                    WHEN transaction_type = 'CREDIT'
+                    THEN points
+                    ELSE -points
+                END
+            ),0
+        ) AS points
+        FROM reward_transactions
+        WHERE user_id = %s
+        """,
+        (user["id"],),
+        fetchone=True
+    )
+
+    return jsonify({
+        "success": True,
+        "stats": {
+            "handovers": stats["handovers"],
+            "verified_weight": float(
+                weight["verified"] or 0
+            ),
+            "reward_points": float(
+                rewards_data["points"] or 0
+            )
         }
+    })
 
 
-        if (
-            which === "withdrawals"
-        ) {
+# ============================================================
+# RECYCLER DASHBOARD
+# ============================================================
 
-            document.getElementById(
-                "adminTabContent"
-            ).innerHTML =
-                adminWithdrawalsHTML(
-                    await api(
-                        "/api/withdrawals"
-                    )
-                );
+@app.route("/api/dashboard/recycler")
+@login_required
+@roles_required("RECYCLER")
+def recycler_dashboard(user):
+
+    recycler = db_execute(
+        """
+        SELECT id
+        FROM recyclers
+        WHERE user_id = %s
+        """,
+        (user["id"],),
+        fetchone=True
+    )
+
+    stats = db_execute(
+        """
+        SELECT
+            COUNT(*) FILTER (
+                WHERE status = 'AGGREGATOR_VERIFIED'
+            ) AS pending_receipts,
+
+            COUNT(*) FILTER (
+                WHERE status = 'EPR_VERIFIED'
+            ) AS verified_records,
+
+            COALESCE(
+                SUM(recycler_weight),
+                0
+            ) AS received_weight
+        FROM collections
+        WHERE recycler_id = %s
+           OR (
+                recycler_id IS NULL
+                AND status = 'AGGREGATOR_VERIFIED'
+           )
+        """,
+        (recycler["id"],),
+        fetchone=True
+    )
+
+    return jsonify({
+        "success": True,
+        "stats": {
+            "pending_receipts": stats["pending_receipts"],
+            "verified_records": stats["verified_records"],
+            "received_weight": float(
+                stats["received_weight"] or 0
+            )
         }
+    })
 
 
-        if (
-            which === "audit"
-        ) {
+# ============================================================
+# GENERIC DASHBOARD ROUTER
+# ============================================================
 
-            document.getElementById(
-                "adminTabContent"
-            ).innerHTML =
-                adminAuditHTML(
-                    await api(
-                        "/api/admin/audit"
-                    )
-                );
-        }
+@app.route("/api/dashboard")
+@login_required
+def dashboard(user):
 
-    } catch (error) {
+    role = user["role"]
 
-        toast(
-            error.message,
-            "error"
-        );
-    }
-}
+    if role == "USER":
+        return user_dashboard(user)
 
+    if role == "COLLECTOR":
+        return collector_dashboard(user)
 
-/* ============================================================
-   ADMIN USER TOGGLE
-============================================================ */
+    if role == "AGGREGATOR":
+        return aggregator_dashboard(user)
 
-async function toggleUser(
-    userId
-) {
+    if role == "RECYCLER":
+        return recycler_dashboard(user)
 
-    try {
+    if role == "BRAND_PRO":
+        return brand_dashboard(user)
 
-        await api(
-            "/api/admin/users/"
-            + userId
-            + "/toggle",
-            {
-                method: "POST"
-            }
-        );
-
-        toast(
-            "User status updated"
-        );
-
-        await renderDashboard();
-
-    } catch (error) {
-
-        toast(
-            error.message,
-            "error"
-        );
-    }
-}
+    return jsonify({
+        "success": False,
+        "error": "Unknown role."
+    }), 403
 
 
-/* ============================================================
-   ADMIN ANOMALY RESOLUTION
-============================================================ */
+# ============================================================
+# ROOT FRONTEND
+# ============================================================
 
-async function resolveAnomaly(
-    anomalyId
-) {
+@app.route("/")
+def index():
 
-    try {
+    # Supports a simple root index.html setup.
+    if os.path.exists("index.html"):
+        return send_from_directory(".", "index.html")
 
-        await api(
-            "/api/admin/anomalies/"
-            + anomalyId
-            + "/resolve",
-            {
-                method: "POST"
-            }
-        );
+    if os.path.exists(
+        os.path.join(app.static_folder or "", "index.html")
+    ):
+        return send_from_directory(
+            app.static_folder,
+            "index.html"
+        )
 
-        toast(
-            "Anomaly resolved"
-        );
-
-        await renderDashboard();
-
-    } catch (error) {
-
-        toast(
-            error.message,
-            "error"
-        );
-    }
-}
+    return jsonify({
+        "message": "E-Waste EPR Platform API is running."
+    })
 
 
-/* ============================================================
-   ADMIN APPROVE WITHDRAWAL
-============================================================ */
+# ============================================================
+# ERROR HANDLERS
+# ============================================================
 
-async function approveWithdrawal(
-    withdrawalId
-) {
+@app.errorhandler(404)
+def not_found(error):
 
-    try {
+    if request.path.startswith("/api/"):
+        return jsonify({
+            "success": False,
+            "error": "API endpoint not found."
+        }), 404
 
-        await api(
-            "/api/admin/withdrawals/"
-            + withdrawalId
-            + "/approve",
-            {
-                method: "POST"
-            }
-        );
-
-        toast(
-            "Withdrawal approved"
-        );
-
-        await renderDashboard();
-
-    } catch (error) {
-
-        toast(
-            error.message,
-            "error"
-        );
-    }
-}
+    return jsonify({
+        "success": False,
+        "error": "Page not found."
+    }), 404
 
 
-/* ============================================================
-   ADMIN REJECT WITHDRAWAL
-============================================================ */
+@app.errorhandler(500)
+def internal_error(error):
 
-async function rejectWithdrawal(
-    withdrawalId
-) {
-
-    try {
-
-        await api(
-            "/api/admin/withdrawals/"
-            + withdrawalId
-            + "/reject",
-            {
-                method: "POST"
-            }
-        );
-
-        toast(
-            "Withdrawal rejected"
-        );
-
-        await renderDashboard();
-
-    } catch (error) {
-
-        toast(
-            error.message,
-            "error"
-        );
-    }
-}
+    return jsonify({
+        "success": False,
+        "error": "Internal server error."
+    }), 500
 
 
-/* ============================================================
-   APPLICATION START
-============================================================ */
+# ============================================================
+# RUN
+# ============================================================
 
-async function boot() {
+if __name__ == "__main__":
+    port = int(os.getenv("PORT", "5000"))
 
-    renderRoles();
-
-    updateNav();
-
-    if (token) {
-
-        try {
-
-            const data =
-                await api(
-                    "/api/me"
-                );
-
-            currentUser =
-                data.user;
-
-            updateNav();
-
-            showScreen(
-                "appScreen"
-            );
-
-            await renderDashboard();
-
-        } catch (error) {
-
-            logout();
-        }
-
-    } else {
-
-        showScreen(
-            "languageScreen"
-        );
-    }
-}
-
-
-boot();
-
-</script>
-
-</body>
-</html>
+    app.run(
+        host="0.0.0.0",
+        port=port,
+        debug=True
+    )
