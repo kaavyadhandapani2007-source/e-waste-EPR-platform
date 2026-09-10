@@ -1,21 +1,30 @@
 from flask import Flask, jsonify, request, send_from_directory
+from flask_cors import CORS
 from datetime import datetime
 import hashlib
 import os
 
 app = Flask(__name__)
+CORS(app)
 
 # ============================================================
-# TEMPORARY DATABASE
+# DEMO DATABASE
 # ============================================================
-# For the hackathon demo, data is stored in memory.
-# Later this can be replaced with PostgreSQL.
 
 collections = {}
+customers = {}
+rewards = {}
+
+# Demo EPR obligation for Brand / PRO
+EPR_OBLIGATION_KG = 10000
+
+# Demo reward rates
+COLLECTOR_POINTS_PER_KG = 10
+CUSTOMER_POINTS_PER_KG = 5
 
 
 # ============================================================
-# HOME
+# FRONTEND
 # ============================================================
 
 @app.route("/")
@@ -27,287 +36,254 @@ def home():
 
 
 # ============================================================
-# SYSTEM STATUS
+# HEALTH
 # ============================================================
 
-@app.route("/api/status", methods=["GET"])
-def status():
-
+@app.route("/health")
+def health():
     return jsonify({
-        "server": "online",
-        "database": "temporary memory database",
-        "total_collections": len(collections),
-        "system": "E-Waste EPR Platform",
-        "version": "1.0"
+        "status": "healthy",
+        "service": "E-Waste EPR Platform"
+    })
+
+
+@app.route("/api/status")
+def status():
+    return jsonify({
+        "status": "online",
+        "platform": "E-Waste EPR Platform",
+        "version": "2.0"
     })
 
 
 # ============================================================
-# CREATE COLLECTION
+# CUSTOMER
+# ============================================================
+
+@app.route("/api/customer/handover", methods=["POST"])
+def create_handover():
+
+    data = request.get_json() or {}
+
+    customer_id = data.get("customer_id")
+    phone = data.get("phone")
+    location = data.get("location")
+    product = data.get("product")
+    weight = data.get("weight")
+    collector_id = data.get("collector_id")
+
+    if not customer_id:
+        return jsonify({"error": "Customer ID is required"}), 400
+
+    if not phone:
+        return jsonify({"error": "Customer phone number is required"}), 400
+
+    if not location:
+        return jsonify({"error": "Location is required"}), 400
+
+    if not product:
+        return jsonify({"error": "Product type is required"}), 400
+
+    if not weight:
+        return jsonify({"error": "Weight is required"}), 400
+
+    try:
+        weight = float(weight)
+    except ValueError:
+        return jsonify({"error": "Invalid weight"}), 400
+
+    handover_id = (
+        "HO-" +
+        datetime.now().strftime("%Y%m%d%H%M%S%f")
+    )
+
+    record = {
+        "handover_id": handover_id,
+        "customer_id": customer_id,
+        "phone": phone,
+        "location": location,
+        "product": product,
+        "weight": weight,
+        "collector_id": collector_id,
+        "status": "PENDING_PICKUP",
+        "risk_status": "LOW_RISK",
+        "created_at": datetime.now().isoformat()
+    }
+
+    customers[handover_id] = record
+
+    return jsonify({
+        "message": "Handover request created",
+        "handover": record
+    }), 201
+
+
+@app.route("/api/customer/handovers")
+def get_handovers():
+
+    return jsonify({
+        "count": len(customers),
+        "handovers": list(customers.values())
+    })
+
+
+# ============================================================
+# COLLECTION
 # ============================================================
 
 @app.route("/api/collection", methods=["POST"])
 def create_collection():
 
-    data = request.get_json()
-
-    if not data:
-        return jsonify({
-            "success": False,
-            "message": "No JSON data received"
-        }), 400
+    data = request.get_json() or {}
 
     collector_id = data.get("collector_id")
     item_type = data.get("item_type")
     quantity = data.get("quantity")
     weight = data.get("weight")
-
-    # -----------------------------
-    # VALIDATION
-    # -----------------------------
+    gps = data.get("gps")
+    image_hash = data.get("image_hash")
+    customer_id = data.get("customer_id")
+    handover_id = data.get("handover_id")
 
     if not collector_id:
-        return jsonify({
-            "success": False,
-            "message": "Collector ID is required"
-        }), 400
+        return jsonify({"error": "Collector ID is required"}), 400
 
     if not item_type:
-        return jsonify({
-            "success": False,
-            "message": "Item type is required"
-        }), 400
+        return jsonify({"error": "Item type is required"}), 400
 
-    if quantity is None:
-        return jsonify({
-            "success": False,
-            "message": "Quantity is required"
-        }), 400
-
-    if weight is None:
-        return jsonify({
-            "success": False,
-            "message": "Weight is required"
-        }), 400
+    if not weight:
+        return jsonify({"error": "Weight is required"}), 400
 
     try:
-        quantity = int(quantity)
         weight = float(weight)
-    except (ValueError, TypeError):
-
-        return jsonify({
-            "success": False,
-            "message": "Quantity and weight must be valid numbers"
-        }), 400
-
-    if quantity <= 0 or weight <= 0:
-
-        return jsonify({
-            "success": False,
-            "message": "Quantity and weight must be greater than zero"
-        }), 400
-
-    # ========================================================
-    # UNIQUE COLLECTION ID
-    # ========================================================
+    except ValueError:
+        return jsonify({"error": "Invalid weight"}), 400
 
     collection_id = (
         "EW-" +
         datetime.now().strftime("%Y%m%d%H%M%S%f")
     )
 
-    timestamp = datetime.now().isoformat()
-
-    # ========================================================
-    # IMAGE HASH
-    # ========================================================
-
-    image_hash = data.get("image_hash")
-
+    # If frontend does not provide hash,
+    # create a demo hash from transaction data.
     if not image_hash:
+        hash_source = (
+            f"{collector_id}"
+            f"{item_type}"
+            f"{weight}"
+            f"{datetime.now().isoformat()}"
+        )
 
         image_hash = hashlib.sha256(
-            collection_id.encode()
+            hash_source.encode()
         ).hexdigest()
 
-    # ========================================================
-    # COLLECTION RECORD
-    # ========================================================
-
-    collection = {
-
+    record = {
         "collection_id": collection_id,
-
         "collector_id": collector_id,
-
+        "customer_id": customer_id,
+        "handover_id": handover_id,
         "item_type": item_type,
-
         "quantity": quantity,
-
         "collector_weight": weight,
-
         "aggregator_weight": None,
-
         "recycler_weight": None,
-
-        "photo": data.get("photo"),
-
+        "gps": gps,
         "image_hash": image_hash,
-
-        "latitude": data.get("latitude"),
-
-        "longitude": data.get("longitude"),
-
-        "timestamp": timestamp,
-
-        "status": "SUBMITTED",
-
         "aggregator_verified": False,
-
-        "recycler_confirmed": False,
-
-        "epr_verified": False,
-
-        "reward_points": 0
+        "recycler_received": False,
+        "epr_status": "PENDING",
+        "collector_reward": 0,
+        "customer_reward": 0,
+        "created_at": datetime.now().isoformat()
     }
 
-    collections[collection_id] = collection
+    collections[collection_id] = record
+
+    # Link customer handover to collection
+    if handover_id in customers:
+        customers[handover_id]["status"] = "COLLECTED"
 
     return jsonify({
-
-        "success": True,
-
-        "message": "Collection recorded successfully!",
-
-        "collection": collection
-
+        "message": "Collection created",
+        "collection": record
     }), 201
 
 
-# ============================================================
-# GET ALL COLLECTIONS
-# ============================================================
-
-@app.route("/api/collections", methods=["GET"])
+@app.route("/api/collections")
 def get_collections():
 
     return jsonify({
-
-        "success": True,
-
         "count": len(collections),
-
         "collections": list(collections.values())
-
     })
 
 
-# ============================================================
-# GET SINGLE COLLECTION
-# ============================================================
-
-@app.route("/api/collection/<collection_id>", methods=["GET"])
+@app.route("/api/collection/<collection_id>")
 def get_collection(collection_id):
 
-    collection = collections.get(collection_id)
+    record = collections.get(collection_id)
 
-    if not collection:
-
+    if not record:
         return jsonify({
-
-            "success": False,
-
-            "message": "Collection not found"
-
+            "error": "Collection not found"
         }), 404
 
-    return jsonify({
-
-        "success": True,
-
-        "collection": collection
-
-    })
+    return jsonify(record)
 
 
 # ============================================================
 # AGGREGATOR VERIFICATION
 # ============================================================
 
-@app.route(
-    "/api/collection/<collection_id>/verify",
-    methods=["POST"]
-)
-def aggregator_verify(collection_id):
+@app.route("/api/collection/<collection_id>/verify", methods=["POST"])
+def verify_collection(collection_id):
 
-    collection = collections.get(collection_id)
+    record = collections.get(collection_id)
 
-    if not collection:
-
+    if not record:
         return jsonify({
-
-            "success": False,
-
-            "message": "Collection not found"
-
+            "error": "Collection not found"
         }), 404
 
     data = request.get_json() or {}
 
-    aggregator_weight = data.get("weight")
+    aggregator_weight = data.get("aggregator_weight")
 
     if aggregator_weight is None:
-
         return jsonify({
-
-            "success": False,
-
-            "message": "Aggregator weight is required"
-
+            "error": "Aggregator weight is required"
         }), 400
 
     try:
-
         aggregator_weight = float(aggregator_weight)
-
-    except (ValueError, TypeError):
-
+    except ValueError:
         return jsonify({
-
-            "success": False,
-
-            "message": "Invalid aggregator weight"
-
+            "error": "Invalid aggregator weight"
         }), 400
 
-    if aggregator_weight <= 0:
+    original_weight = float(record["collector_weight"])
+
+    # Allow 20% tolerance
+    lower = original_weight * 0.80
+    upper = original_weight * 1.20
+
+    if not (lower <= aggregator_weight <= upper):
+
+        record["aggregator_weight"] = aggregator_weight
+        record["aggregator_verified"] = False
 
         return jsonify({
-
-            "success": False,
-
-            "message": "Aggregator weight must be greater than zero"
-
+            "message": "Weight mismatch. Manual review required.",
+            "status": "REVIEW_REQUIRED"
         }), 400
 
-    # ========================================================
-    # SAVE VERIFICATION
-    # ========================================================
-
-    collection["aggregator_weight"] = aggregator_weight
-
-    collection["aggregator_verified"] = True
-
-    collection["status"] = "AGGREGATOR_VERIFIED"
+    record["aggregator_weight"] = aggregator_weight
+    record["aggregator_verified"] = True
 
     return jsonify({
-
-        "success": True,
-
-        "message": "Aggregator verification completed!",
-
-        "collection": collection
-
+        "message": "Aggregator verification successful",
+        "collection": record
     })
 
 
@@ -315,301 +291,150 @@ def aggregator_verify(collection_id):
 # RECYCLER RECEIPT
 # ============================================================
 
-@app.route(
-    "/api/collection/<collection_id>/receive",
-    methods=["POST"]
-)
+@app.route("/api/collection/<collection_id>/receive", methods=["POST"])
 def recycler_receive(collection_id):
 
-    collection = collections.get(collection_id)
+    record = collections.get(collection_id)
 
-    if not collection:
-
+    if not record:
         return jsonify({
-
-            "success": False,
-
-            "message": "Collection not found"
-
+            "error": "Collection not found"
         }), 404
 
-    # ========================================================
-    # AGGREGATOR MUST VERIFY FIRST
-    # ========================================================
-
-    if not collection["aggregator_verified"]:
-
+    # Recycler cannot confirm before aggregator
+    if not record["aggregator_verified"]:
         return jsonify({
-
-            "success": False,
-
-            "message": "Aggregator verification is required first"
-
+            "error": "Aggregator verification required first"
         }), 400
 
     data = request.get_json() or {}
 
-    recycler_weight = data.get("weight")
+    recycler_weight = data.get("recycler_weight")
 
     if recycler_weight is None:
-
         return jsonify({
-
-            "success": False,
-
-            "message": "Recycler weight is required"
-
+            "error": "Recycler weight is required"
         }), 400
 
     try:
-
         recycler_weight = float(recycler_weight)
-
-    except (ValueError, TypeError):
-
+    except ValueError:
         return jsonify({
-
-            "success": False,
-
-            "message": "Invalid recycler weight"
-
+            "error": "Invalid recycler weight"
         }), 400
 
-    if recycler_weight <= 0:
+    aggregator_weight = float(
+        record["aggregator_weight"]
+    )
+
+    lower = aggregator_weight * 0.80
+    upper = aggregator_weight * 1.20
+
+    if not (lower <= recycler_weight <= upper):
 
         return jsonify({
-
-            "success": False,
-
-            "message": "Recycler weight must be greater than zero"
-
+            "error": "Recycler weight does not match verified weight",
+            "status": "REVIEW_REQUIRED"
         }), 400
 
+    if not record.get("image_hash"):
+
+        return jsonify({
+            "error": "Image verification required"
+        }), 400
+
+    record["recycler_weight"] = recycler_weight
+    record["recycler_received"] = True
+    record["epr_status"] = "EPR_VERIFIED"
+
     # ========================================================
-    # SAVE RECEIPT
+    # REWARD CALCULATION
     # ========================================================
 
-    collection["recycler_weight"] = recycler_weight
+    collector_points = int(
+        recycler_weight * COLLECTOR_POINTS_PER_KG
+    )
 
-    collection["recycler_confirmed"] = True
+    customer_points = int(
+        recycler_weight * CUSTOMER_POINTS_PER_KG
+    )
 
-    collection["status"] = "RECYCLER_CONFIRMED"
+    record["collector_reward"] = collector_points
+    record["customer_reward"] = customer_points
 
-    # ========================================================
-    # TRUST VERIFICATION
-    # ========================================================
+    collector_id = record["collector_id"]
+    customer_id = record.get("customer_id")
 
-    verification = verify_collection_record(collection)
+    # Collector wallet
+    rewards.setdefault(collector_id, 0)
+    rewards[collector_id] += collector_points
 
-    if verification["valid"]:
+    # Customer wallet
+    if customer_id:
+        rewards.setdefault(customer_id, 0)
+        rewards[customer_id] += customer_points
 
-        collection["status"] = "EPR_VERIFIED"
+    # Update customer handover
+    handover_id = record.get("handover_id")
 
-        collection["epr_verified"] = True
+    if handover_id in customers:
 
-        # Demo reward:
-        # 10 points per verified kg
+        customers[handover_id]["status"] = "VERIFIED"
 
-        collection["reward_points"] = int(
-            recycler_weight * 10
-        )
-
-    else:
-
-        collection["status"] = "FLAGGED"
-
-        collection["epr_verified"] = False
-
-        collection["reward_points"] = 0
+        customers[handover_id][
+            "reward_points"
+        ] = customer_points
 
     return jsonify({
-
-        "success": True,
-
-        "message": "Recycler receipt processed!",
-
-        "verification": verification,
-
-        "collection": collection
-
+        "message": "Recycler confirmation successful",
+        "collection": record,
+        "rewards": {
+            "collector_points": collector_points,
+            "customer_points": customer_points
+        }
     })
-
-
-# ============================================================
-# TRUST / FRAUD VERIFICATION
-# ============================================================
-
-def verify_collection_record(collection):
-
-    checks = {}
-
-    # --------------------------------------------------------
-    # CHECK 1: Aggregator verification
-    # --------------------------------------------------------
-
-    checks["aggregator_verified"] = (
-        collection["aggregator_verified"]
-    )
-
-    # --------------------------------------------------------
-    # CHECK 2: Recycler confirmation
-    # --------------------------------------------------------
-
-    checks["recycler_confirmed"] = (
-        collection["recycler_confirmed"]
-    )
-
-    # --------------------------------------------------------
-    # CHECK 3: Weight consistency
-    # --------------------------------------------------------
-
-    collector_weight = collection["collector_weight"]
-
-    aggregator_weight = collection["aggregator_weight"]
-
-    recycler_weight = collection["recycler_weight"]
-
-    weight_valid = True
-
-    # Collector → Aggregator
-
-    if aggregator_weight is not None:
-
-        difference = abs(
-            collector_weight -
-            aggregator_weight
-        )
-
-        if difference > collector_weight * 0.20:
-
-            weight_valid = False
-
-    # Aggregator → Recycler
-
-    if (
-        recycler_weight is not None
-        and aggregator_weight is not None
-    ):
-
-        difference = abs(
-            aggregator_weight -
-            recycler_weight
-        )
-
-        if difference > aggregator_weight * 0.20:
-
-            weight_valid = False
-
-    checks["weight_consistency"] = weight_valid
-
-    # --------------------------------------------------------
-    # CHECK 4: Image hash
-    # --------------------------------------------------------
-
-    checks["image_hash"] = bool(
-        collection.get("image_hash")
-    )
-
-    # --------------------------------------------------------
-    # FINAL DECISION
-    # --------------------------------------------------------
-
-    valid = all(checks.values())
-
-    if valid:
-
-        message = (
-            "Collection passed trust verification."
-        )
-
-    else:
-
-        message = (
-            "Collection requires further verification."
-        )
-
-    return {
-
-        "valid": valid,
-
-        "checks": checks,
-
-        "message": message
-
-    }
 
 
 # ============================================================
 # EPR RECORD
 # ============================================================
 
-@app.route(
-    "/api/epr/<collection_id>",
-    methods=["GET"]
-)
-def get_epr_record(collection_id):
+@app.route("/api/epr/<collection_id>")
+def get_epr(collection_id):
 
-    collection = collections.get(collection_id)
+    record = collections.get(collection_id)
 
-    if not collection:
-
+    if not record:
         return jsonify({
-
-            "success": False,
-
-            "message": "Collection not found"
-
+            "error": "EPR record not found"
         }), 404
 
-    if not collection["epr_verified"]:
-
+    if record["epr_status"] != "EPR_VERIFIED":
         return jsonify({
-
-            "success": False,
-
-            "message": "EPR record not generated yet",
-
-            "status": collection["status"]
-
+            "error": "EPR is not verified yet"
         }), 400
 
-    epr_record = {
+    return jsonify({
+        "epr_id": "EPR-" + collection_id,
+        "collection_id": collection_id,
+        "verified_weight": record["recycler_weight"],
+        "status": "VERIFIED",
+        "collector_id": record["collector_id"],
+        "customer_id": record.get("customer_id")
+    })
 
-        "epr_record_id":
-            "EPR-" + collection_id,
 
-        "collection_id":
-            collection["collection_id"],
+# ============================================================
+# REWARDS
+# ============================================================
 
-        "collector_id":
-            collection["collector_id"],
-
-        "item_type":
-            collection["item_type"],
-
-        "verified_weight":
-            collection["recycler_weight"],
-
-        "channel":
-            "Informal Collector → Aggregator → Recycler",
-
-        "verification_status":
-            "VERIFIED",
-
-        "epr_credit":
-            collection["recycler_weight"],
-
-        "generated_at":
-            datetime.now().isoformat()
-
-    }
+@app.route("/api/rewards/<user_id>")
+def get_rewards(user_id):
 
     return jsonify({
-
-        "success": True,
-
-        "epr_record": epr_record
-
+        "user_id": user_id,
+        "points": rewards.get(user_id, 0),
+        "demo_cash_value": rewards.get(user_id, 0) * 0.10
     })
 
 
@@ -617,203 +442,53 @@ def get_epr_record(collection_id):
 # BRAND / PRO DASHBOARD
 # ============================================================
 
-@app.route("/api/dashboard", methods=["GET"])
+@app.route("/api/dashboard")
 def dashboard():
 
-    total_collections = len(collections)
+    verified_records = [
+        c for c in collections.values()
+        if c["epr_status"] == "EPR_VERIFIED"
+    ]
 
-    total_weight = 0
-
-    verified_weight = 0
-
-    pending = 0
-
-    flagged = 0
-
-    reward_points = 0
-
-    # ========================================================
-    # CALCULATE PLATFORM METRICS
-    # ========================================================
-
-    for collection in collections.values():
-
-        total_weight += float(
-            collection.get(
-                "collector_weight",
-                0
-            )
-        )
-
-        reward_points += int(
-            collection.get(
-                "reward_points",
-                0
-            )
-        )
-
-        if collection["epr_verified"]:
-
-            verified_weight += float(
-                collection.get(
-                    "recycler_weight",
-                    0
-                )
-            )
-
-        elif collection["status"] == "FLAGGED":
-
-            flagged += 1
-
-        else:
-
-            pending += 1
-
-    # ========================================================
-    # DEMO EPR OBLIGATION
-    # ========================================================
-
-    epr_obligation = 10000
+    verified_weight = sum(
+        float(c["recycler_weight"])
+        for c in verified_records
+    )
 
     remaining = max(
-        epr_obligation -
-        verified_weight,
+        EPR_OBLIGATION_KG - verified_weight,
         0
     )
 
-    compliance = 0
-
-    if epr_obligation > 0:
-
-        compliance = (
-            verified_weight /
-            epr_obligation
-        ) * 100
+    compliance = (
+        verified_weight / EPR_OBLIGATION_KG
+    ) * 100 if EPR_OBLIGATION_KG else 0
 
     return jsonify({
 
-        "success": True,
+        "brand": "ECOGEN Electronics",
 
-        "dashboard": {
+        "epr_obligation_kg": EPR_OBLIGATION_KG,
 
-            "total_collections":
-                total_collections,
+        "verified_epr_kg": round(
+            verified_weight, 2
+        ),
 
-            "total_collector_weight":
-                round(
-                    total_weight,
-                    2
-                ),
+        "remaining_kg": round(
+            remaining, 2
+        ),
 
-            "verified_epr_weight":
-                round(
-                    verified_weight,
-                    2
-                ),
+        "compliance_percentage": round(
+            compliance, 2
+        ),
 
-            "pending_collections":
-                pending,
-
-            "flagged_collections":
-                flagged,
-
-            "reward_points":
-                reward_points,
-
-            "epr_obligation":
-                epr_obligation,
-
-            "epr_remaining":
-                round(
-                    remaining,
-                    2
-                ),
-
-            "compliance_percentage":
-                round(
-                    compliance,
-                    2
-                )
-        }
-
+        "verified_records": verified_records
     })
 
 
 # ============================================================
-# COLLECTOR REWARDS
+# RUN
 # ============================================================
-
-@app.route(
-    "/api/rewards/<collector_id>",
-    methods=["GET"]
-)
-def collector_rewards(collector_id):
-
-    total_points = 0
-
-    verified_collections = 0
-
-    for collection in collections.values():
-
-        if (
-            collection["collector_id"]
-            == collector_id
-        ):
-
-            total_points += int(
-                collection.get(
-                    "reward_points",
-                    0
-                )
-            )
-
-            if collection["epr_verified"]:
-
-                verified_collections += 1
-
-    return jsonify({
-
-        "success": True,
-
-        "collector_id":
-            collector_id,
-
-        "verified_collections":
-            verified_collections,
-
-        "reward_points":
-            total_points,
-
-        "redemption":
-            "UPI redemption can be integrated later."
-
-    })
-
-
-# ============================================================
-# HEALTH CHECK
-# ============================================================
-
-@app.route("/health", methods=["GET"])
-def health():
-
-    return jsonify({
-
-        "status": "healthy",
-
-        "service":
-            "E-Waste EPR Platform",
-
-        "timestamp":
-            datetime.now().isoformat()
-
-    })
-
-
-# ============================================================
-# RUN SERVER LOCALLY
-# ============================================================
-# Render uses Gunicorn, so this section is only for local use.
 
 if __name__ == "__main__":
 
