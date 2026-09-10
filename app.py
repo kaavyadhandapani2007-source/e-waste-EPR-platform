@@ -5,12 +5,11 @@ import os
 
 app = Flask(__name__)
 
-
 # ============================================================
 # TEMPORARY DATABASE
 # ============================================================
-# For now, data is stored in memory.
-# Later we will replace this with PostgreSQL.
+# For the hackathon demo, data is stored in memory.
+# Later this can be replaced with PostgreSQL.
 
 collections = {}
 
@@ -21,7 +20,11 @@ collections = {}
 
 @app.route("/")
 def home():
-    return send_from_directory(".","index.html")
+    return send_from_directory(
+        os.path.dirname(os.path.abspath(__file__)),
+        "index.html"
+    )
+
 
 # ============================================================
 # SYSTEM STATUS
@@ -34,7 +37,8 @@ def status():
         "server": "online",
         "database": "temporary memory database",
         "total_collections": len(collections),
-        "system": "E-Waste EPR Platform"
+        "system": "E-Waste EPR Platform",
+        "version": "1.0"
     })
 
 
@@ -53,11 +57,14 @@ def create_collection():
             "message": "No JSON data received"
         }), 400
 
-    # Required fields
     collector_id = data.get("collector_id")
     item_type = data.get("item_type")
     quantity = data.get("quantity")
     weight = data.get("weight")
+
+    # -----------------------------
+    # VALIDATION
+    # -----------------------------
 
     if not collector_id:
         return jsonify({
@@ -83,21 +90,50 @@ def create_collection():
             "message": "Weight is required"
         }), 400
 
-    # Generate collection ID
-    collection_id = "EW-" + datetime.now().strftime("%Y%m%d%H%M%S")
+    try:
+        quantity = int(quantity)
+        weight = float(weight)
+    except (ValueError, TypeError):
 
-    # Timestamp
+        return jsonify({
+            "success": False,
+            "message": "Quantity and weight must be valid numbers"
+        }), 400
+
+    if quantity <= 0 or weight <= 0:
+
+        return jsonify({
+            "success": False,
+            "message": "Quantity and weight must be greater than zero"
+        }), 400
+
+    # ========================================================
+    # UNIQUE COLLECTION ID
+    # ========================================================
+
+    collection_id = (
+        "EW-" +
+        datetime.now().strftime("%Y%m%d%H%M%S%f")
+    )
+
     timestamp = datetime.now().isoformat()
 
-    # Create image hash if image_hash supplied
+    # ========================================================
+    # IMAGE HASH
+    # ========================================================
+
     image_hash = data.get("image_hash")
 
     if not image_hash:
+
         image_hash = hashlib.sha256(
             collection_id.encode()
         ).hexdigest()
 
-    # Collection record
+    # ========================================================
+    # COLLECTION RECORD
+    # ========================================================
+
     collection = {
 
         "collection_id": collection_id,
@@ -108,7 +144,7 @@ def create_collection():
 
         "quantity": quantity,
 
-        "collector_weight": float(weight),
+        "collector_weight": weight,
 
         "aggregator_weight": None,
 
@@ -135,13 +171,16 @@ def create_collection():
         "reward_points": 0
     }
 
-    # Save record
     collections[collection_id] = collection
 
     return jsonify({
+
         "success": True,
+
         "message": "Collection recorded successfully!",
+
         "collection": collection
+
     }), 201
 
 
@@ -153,14 +192,18 @@ def create_collection():
 def get_collections():
 
     return jsonify({
+
         "success": True,
+
         "count": len(collections),
+
         "collections": list(collections.values())
+
     })
 
 
 # ============================================================
-# GET ONE COLLECTION
+# GET SINGLE COLLECTION
 # ============================================================
 
 @app.route("/api/collection/<collection_id>", methods=["GET"])
@@ -171,13 +214,19 @@ def get_collection(collection_id):
     if not collection:
 
         return jsonify({
+
             "success": False,
+
             "message": "Collection not found"
+
         }), 404
 
     return jsonify({
+
         "success": True,
+
         "collection": collection
+
     })
 
 
@@ -185,7 +234,10 @@ def get_collection(collection_id):
 # AGGREGATOR VERIFICATION
 # ============================================================
 
-@app.route("/api/collection/<collection_id>/verify", methods=["POST"])
+@app.route(
+    "/api/collection/<collection_id>/verify",
+    methods=["POST"]
+)
 def aggregator_verify(collection_id):
 
     collection = collections.get(collection_id)
@@ -193,8 +245,11 @@ def aggregator_verify(collection_id):
     if not collection:
 
         return jsonify({
+
             "success": False,
+
             "message": "Collection not found"
+
         }), 404
 
     data = request.get_json() or {}
@@ -204,11 +259,40 @@ def aggregator_verify(collection_id):
     if aggregator_weight is None:
 
         return jsonify({
+
             "success": False,
+
             "message": "Aggregator weight is required"
+
         }), 400
 
-    aggregator_weight = float(aggregator_weight)
+    try:
+
+        aggregator_weight = float(aggregator_weight)
+
+    except (ValueError, TypeError):
+
+        return jsonify({
+
+            "success": False,
+
+            "message": "Invalid aggregator weight"
+
+        }), 400
+
+    if aggregator_weight <= 0:
+
+        return jsonify({
+
+            "success": False,
+
+            "message": "Aggregator weight must be greater than zero"
+
+        }), 400
+
+    # ========================================================
+    # SAVE VERIFICATION
+    # ========================================================
 
     collection["aggregator_weight"] = aggregator_weight
 
@@ -217,9 +301,13 @@ def aggregator_verify(collection_id):
     collection["status"] = "AGGREGATOR_VERIFIED"
 
     return jsonify({
+
         "success": True,
+
         "message": "Aggregator verification completed!",
+
         "collection": collection
+
     })
 
 
@@ -227,7 +315,10 @@ def aggregator_verify(collection_id):
 # RECYCLER RECEIPT
 # ============================================================
 
-@app.route("/api/collection/<collection_id>/receive", methods=["POST"])
+@app.route(
+    "/api/collection/<collection_id>/receive",
+    methods=["POST"]
+)
 def recycler_receive(collection_id):
 
     collection = collections.get(collection_id)
@@ -235,9 +326,26 @@ def recycler_receive(collection_id):
     if not collection:
 
         return jsonify({
+
             "success": False,
+
             "message": "Collection not found"
+
         }), 404
+
+    # ========================================================
+    # AGGREGATOR MUST VERIFY FIRST
+    # ========================================================
+
+    if not collection["aggregator_verified"]:
+
+        return jsonify({
+
+            "success": False,
+
+            "message": "Aggregator verification is required first"
+
+        }), 400
 
     data = request.get_json() or {}
 
@@ -246,11 +354,40 @@ def recycler_receive(collection_id):
     if recycler_weight is None:
 
         return jsonify({
+
             "success": False,
+
             "message": "Recycler weight is required"
+
         }), 400
 
-    recycler_weight = float(recycler_weight)
+    try:
+
+        recycler_weight = float(recycler_weight)
+
+    except (ValueError, TypeError):
+
+        return jsonify({
+
+            "success": False,
+
+            "message": "Invalid recycler weight"
+
+        }), 400
+
+    if recycler_weight <= 0:
+
+        return jsonify({
+
+            "success": False,
+
+            "message": "Recycler weight must be greater than zero"
+
+        }), 400
+
+    # ========================================================
+    # SAVE RECEIPT
+    # ========================================================
 
     collection["recycler_weight"] = recycler_weight
 
@@ -258,7 +395,10 @@ def recycler_receive(collection_id):
 
     collection["status"] = "RECYCLER_CONFIRMED"
 
-    # Run verification
+    # ========================================================
+    # TRUST VERIFICATION
+    # ========================================================
+
     verification = verify_collection_record(collection)
 
     if verification["valid"]:
@@ -267,7 +407,9 @@ def recycler_receive(collection_id):
 
         collection["epr_verified"] = True
 
-        # Reward points
+        # Demo reward:
+        # 10 points per verified kg
+
         collection["reward_points"] = int(
             recycler_weight * 10
         )
@@ -276,16 +418,25 @@ def recycler_receive(collection_id):
 
         collection["status"] = "FLAGGED"
 
+        collection["epr_verified"] = False
+
+        collection["reward_points"] = 0
+
     return jsonify({
+
         "success": True,
+
         "message": "Recycler receipt processed!",
+
         "verification": verification,
+
         "collection": collection
+
     })
 
 
 # ============================================================
-# VERIFICATION / TRUST ENGINE
+# TRUST / FRAUD VERIFICATION
 # ============================================================
 
 def verify_collection_record(collection):
@@ -293,25 +444,23 @@ def verify_collection_record(collection):
     checks = {}
 
     # --------------------------------------------------------
-    # CHECK 1 — Aggregator verification
+    # CHECK 1: Aggregator verification
     # --------------------------------------------------------
 
     checks["aggregator_verified"] = (
         collection["aggregator_verified"]
     )
 
-
     # --------------------------------------------------------
-    # CHECK 2 — Recycler confirmation
+    # CHECK 2: Recycler confirmation
     # --------------------------------------------------------
 
     checks["recycler_confirmed"] = (
         collection["recycler_confirmed"]
     )
 
-
     # --------------------------------------------------------
-    # CHECK 3 — Weight consistency
+    # CHECK 3: Weight consistency
     # --------------------------------------------------------
 
     collector_weight = collection["collector_weight"]
@@ -322,54 +471,62 @@ def verify_collection_record(collection):
 
     weight_valid = True
 
+    # Collector → Aggregator
+
     if aggregator_weight is not None:
 
         difference = abs(
-            collector_weight - aggregator_weight
+            collector_weight -
+            aggregator_weight
         )
 
-        # Allow 20% difference for demo
         if difference > collector_weight * 0.20:
 
             weight_valid = False
 
-    if recycler_weight is not None:
+    # Aggregator → Recycler
+
+    if (
+        recycler_weight is not None
+        and aggregator_weight is not None
+    ):
 
         difference = abs(
-            aggregator_weight - recycler_weight
+            aggregator_weight -
+            recycler_weight
         )
 
-        # Allow 20% difference for demo
         if difference > aggregator_weight * 0.20:
 
             weight_valid = False
 
     checks["weight_consistency"] = weight_valid
 
-
     # --------------------------------------------------------
-    # CHECK 4 — Image hash
+    # CHECK 4: Image hash
     # --------------------------------------------------------
 
     checks["image_hash"] = bool(
         collection.get("image_hash")
     )
 
-
     # --------------------------------------------------------
-    # FINAL VERIFICATION
+    # FINAL DECISION
     # --------------------------------------------------------
 
     valid = all(checks.values())
 
     if valid:
 
-        message = "Collection passed trust verification."
+        message = (
+            "Collection passed trust verification."
+        )
 
     else:
 
-        message = "Collection requires further verification."
-
+        message = (
+            "Collection requires further verification."
+        )
 
     return {
 
@@ -378,6 +535,7 @@ def verify_collection_record(collection):
         "checks": checks,
 
         "message": message
+
     }
 
 
@@ -385,7 +543,10 @@ def verify_collection_record(collection):
 # EPR RECORD
 # ============================================================
 
-@app.route("/api/epr/<collection_id>", methods=["GET"])
+@app.route(
+    "/api/epr/<collection_id>",
+    methods=["GET"]
+)
 def get_epr_record(collection_id):
 
     collection = collections.get(collection_id)
@@ -393,16 +554,23 @@ def get_epr_record(collection_id):
     if not collection:
 
         return jsonify({
+
             "success": False,
+
             "message": "Collection not found"
+
         }), 404
 
     if not collection["epr_verified"]:
 
         return jsonify({
+
             "success": False,
+
             "message": "EPR record not generated yet",
+
             "status": collection["status"]
+
         }), 400
 
     epr_record = {
@@ -433,16 +601,20 @@ def get_epr_record(collection_id):
 
         "generated_at":
             datetime.now().isoformat()
+
     }
 
     return jsonify({
+
         "success": True,
+
         "epr_record": epr_record
+
     })
 
 
 # ============================================================
-# DASHBOARD
+# BRAND / PRO DASHBOARD
 # ============================================================
 
 @app.route("/api/dashboard", methods=["GET"])
@@ -460,17 +632,33 @@ def dashboard():
 
     reward_points = 0
 
+    # ========================================================
+    # CALCULATE PLATFORM METRICS
+    # ========================================================
 
     for collection in collections.values():
 
-        total_weight += collection["collector_weight"]
+        total_weight += float(
+            collection.get(
+                "collector_weight",
+                0
+            )
+        )
 
-        reward_points += collection["reward_points"]
+        reward_points += int(
+            collection.get(
+                "reward_points",
+                0
+            )
+        )
 
         if collection["epr_verified"]:
 
-            verified_weight += (
-                collection["recycler_weight"]
+            verified_weight += float(
+                collection.get(
+                    "recycler_weight",
+                    0
+                )
             )
 
         elif collection["status"] == "FLAGGED":
@@ -481,12 +669,15 @@ def dashboard():
 
             pending += 1
 
+    # ========================================================
+    # DEMO EPR OBLIGATION
+    # ========================================================
 
-    # Demo EPR obligation
     epr_obligation = 10000
 
     remaining = max(
-        epr_obligation - verified_weight,
+        epr_obligation -
+        verified_weight,
         0
     )
 
@@ -499,7 +690,6 @@ def dashboard():
             epr_obligation
         ) * 100
 
-
     return jsonify({
 
         "success": True,
@@ -510,10 +700,16 @@ def dashboard():
                 total_collections,
 
             "total_collector_weight":
-                round(total_weight, 2),
+                round(
+                    total_weight,
+                    2
+                ),
 
             "verified_epr_weight":
-                round(verified_weight, 2),
+                round(
+                    verified_weight,
+                    2
+                ),
 
             "pending_collections":
                 pending,
@@ -528,11 +724,18 @@ def dashboard():
                 epr_obligation,
 
             "epr_remaining":
-                round(remaining, 2),
+                round(
+                    remaining,
+                    2
+                ),
 
             "compliance_percentage":
-                round(compliance, 2)
+                round(
+                    compliance,
+                    2
+                )
         }
+
     })
 
 
@@ -540,13 +743,15 @@ def dashboard():
 # COLLECTOR REWARDS
 # ============================================================
 
-@app.route("/api/rewards/<collector_id>", methods=["GET"])
+@app.route(
+    "/api/rewards/<collector_id>",
+    methods=["GET"]
+)
 def collector_rewards(collector_id):
 
     total_points = 0
 
     verified_collections = 0
-
 
     for collection in collections.values():
 
@@ -555,14 +760,16 @@ def collector_rewards(collector_id):
             == collector_id
         ):
 
-            total_points += (
-                collection["reward_points"]
+            total_points += int(
+                collection.get(
+                    "reward_points",
+                    0
+                )
             )
 
             if collection["epr_verified"]:
 
                 verified_collections += 1
-
 
     return jsonify({
 
@@ -579,17 +786,39 @@ def collector_rewards(collector_id):
 
         "redemption":
             "UPI redemption can be integrated later."
+
     })
 
 
 # ============================================================
-# RUN SERVER
+# HEALTH CHECK
 # ============================================================
+
+@app.route("/health", methods=["GET"])
+def health():
+
+    return jsonify({
+
+        "status": "healthy",
+
+        "service":
+            "E-Waste EPR Platform",
+
+        "timestamp":
+            datetime.now().isoformat()
+
+    })
+
+
+# ============================================================
+# RUN SERVER LOCALLY
+# ============================================================
+# Render uses Gunicorn, so this section is only for local use.
 
 if __name__ == "__main__":
 
     app.run(
         host="0.0.0.0",
-        port=5000
+        port=5000,
         debug=True
     )
