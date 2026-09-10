@@ -1,426 +1,1756 @@
+import os
+from datetime import datetime, timezone
+from functools import wraps
+
 from flask import Flask, jsonify, request, send_from_directory
 from flask_cors import CORS
-from datetime import datetime
-import hashlib
-import os
+from flask_sqlalchemy import SQLAlchemy
+from flask_jwt_extended import (
+    JWTManager,
+    create_access_token,
+    jwt_required,
+    get_jwt,
+)
+
+# ============================================================
+# APP CONFIGURATION
+# ============================================================
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 app = Flask(__name__)
 CORS(app)
 
+DATABASE_URL = os.getenv(
+    "DATABASE_URL",
+    "sqlite:///" + os.path.join(BASE_DIR, "ewaste.db")
+)
+
+# Render / PostgreSQL compatibility
+if DATABASE_URL.startswith("postgres://"):
+    DATABASE_URL = DATABASE_URL.replace(
+        "postgres://",
+        "postgresql://",
+        1
+    )
+
+app.config["SQLALCHEMY_DATABASE_URI"] = DATABASE_URL
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+app.config["JWT_SECRET_KEY"] = os.getenv(
+    "JWT_SECRET_KEY",
+    "change-this-demo-secret"
+)
+
+db = SQLAlchemy(app)
+jwt = JWTManager(app)
+
 # ============================================================
-# DEMO DATABASE
+# REWARD CONFIGURATION
 # ============================================================
 
-collections = {}
-customers = {}
-rewards = {}
+# NOTE:
+# Reward points are NOT EPR credits.
+# EPR quantity is generated only after recycler confirmation.
 
-# Demo EPR obligation for Brand / PRO
-EPR_OBLIGATION_KG = 10000
+POINT_VALUE = 0.10
 
-# Demo reward rates
-COLLECTOR_POINTS_PER_KG = 10
 CUSTOMER_POINTS_PER_KG = 5
+COLLECTOR_POINTS_PER_KG = 10
+
+MIN_WITHDRAW_POINTS = 100
 
 
 # ============================================================
-# FRONTEND
+# DATABASE MODELS
+# ============================================================
+
+class User(db.Model):
+
+    id = db.Column(
+        db.Integer,
+        primary_key=True
+    )
+
+    user_id = db.Column(
+        db.String(40),
+        unique=True,
+        nullable=False
+    )
+
+    name = db.Column(
+        db.String(120),
+        nullable=False
+    )
+
+    role = db.Column(
+        db.String(30),
+        nullable=False
+    )
+
+    phone = db.Column(
+        db.String(30)
+    )
+
+    active = db.Column(
+        db.Boolean,
+        default=True,
+        nullable=False
+    )
+
+    created_at = db.Column(
+        db.DateTime,
+        default=lambda: datetime.now(timezone.utc)
+    )
+
+
+class CustomerHandover(db.Model):
+
+    id = db.Column(
+        db.Integer,
+        primary_key=True
+    )
+
+    handover_id = db.Column(
+        db.String(40),
+        unique=True,
+        nullable=False
+    )
+
+    customer_id = db.Column(
+        db.String(40),
+        nullable=False
+    )
+
+    collector_id = db.Column(
+        db.String(40),
+        nullable=False
+    )
+
+    phone = db.Column(
+        db.String(30)
+    )
+
+    location = db.Column(
+        db.String(255)
+    )
+
+    product = db.Column(
+        db.String(120),
+        nullable=False
+    )
+
+    approximate_weight = db.Column(
+        db.Float,
+        default=0
+    )
+
+    serial_number = db.Column(
+        db.String(120)
+    )
+
+    photo_hash = db.Column(
+        db.String(64)
+    )
+
+    status = db.Column(
+        db.String(40),
+        default="HANDED_OVER"
+    )
+
+    created_at = db.Column(
+        db.DateTime,
+        default=lambda: datetime.now(timezone.utc)
+    )
+
+
+class Collection(db.Model):
+
+    id = db.Column(
+        db.Integer,
+        primary_key=True
+    )
+
+    collection_id = db.Column(
+        db.String(40),
+        unique=True,
+        nullable=False
+    )
+
+    handover_id = db.Column(
+        db.String(40),
+        nullable=False
+    )
+
+    collector_id = db.Column(
+        db.String(40),
+        nullable=False
+    )
+
+    aggregator_id = db.Column(
+        db.String(40)
+    )
+
+    recycler_id = db.Column(
+        db.String(40)
+    )
+
+    collector_weight = db.Column(
+        db.Float,
+        default=0
+    )
+
+    verified_weight = db.Column(
+        db.Float
+    )
+
+    recycler_weight = db.Column(
+        db.Float
+    )
+
+    gps = db.Column(
+        db.String(100)
+    )
+
+    photo_hash = db.Column(
+        db.String(64)
+    )
+
+    status = db.Column(
+        db.String(40),
+        default="COLLECTED"
+    )
+
+    anomaly = db.Column(
+        db.Boolean,
+        default=False
+    )
+
+    created_at = db.Column(
+        db.DateTime,
+        default=lambda: datetime.now(timezone.utc)
+    )
+
+
+class EPRRecord(db.Model):
+
+    id = db.Column(
+        db.Integer,
+        primary_key=True
+    )
+
+    epr_id = db.Column(
+        db.String(40),
+        unique=True,
+        nullable=False
+    )
+
+    collection_id = db.Column(
+        db.String(40),
+        nullable=False
+    )
+
+    brand = db.Column(
+        db.String(120),
+        nullable=False
+    )
+
+    verified_weight = db.Column(
+        db.Float,
+        nullable=False
+    )
+
+    status = db.Column(
+        db.String(30),
+        default="VERIFIED"
+    )
+
+    created_at = db.Column(
+        db.DateTime,
+        default=lambda: datetime.now(timezone.utc)
+    )
+
+
+class RewardTransaction(db.Model):
+
+    id = db.Column(
+        db.Integer,
+        primary_key=True
+    )
+
+    transaction_id = db.Column(
+        db.String(50),
+        unique=True,
+        nullable=False
+    )
+
+    user_id = db.Column(
+        db.String(40),
+        nullable=False
+    )
+
+    points = db.Column(
+        db.Integer,
+        nullable=False
+    )
+
+    transaction_type = db.Column(
+        db.String(30),
+        nullable=False
+    )
+
+    reference_id = db.Column(
+        db.String(50)
+    )
+
+    description = db.Column(
+        db.String(255)
+    )
+
+    created_at = db.Column(
+        db.DateTime,
+        default=lambda: datetime.now(timezone.utc)
+    )
+
+
+class Withdrawal(db.Model):
+
+    id = db.Column(
+        db.Integer,
+        primary_key=True
+    )
+
+    withdrawal_id = db.Column(
+        db.String(50),
+        unique=True,
+        nullable=False
+    )
+
+    user_id = db.Column(
+        db.String(40),
+        nullable=False
+    )
+
+    points = db.Column(
+        db.Integer,
+        nullable=False
+    )
+
+    amount = db.Column(
+        db.Float,
+        nullable=False
+    )
+
+    upi_id = db.Column(
+        db.String(120),
+        nullable=False
+    )
+
+    status = db.Column(
+        db.String(20),
+        default="PENDING"
+    )
+
+    created_at = db.Column(
+        db.DateTime,
+        default=lambda: datetime.now(timezone.utc)
+    )
+
+
+class AuditLog(db.Model):
+
+    id = db.Column(
+        db.Integer,
+        primary_key=True
+    )
+
+    actor_id = db.Column(
+        db.String(40),
+        nullable=False
+    )
+
+    action = db.Column(
+        db.String(100),
+        nullable=False
+    )
+
+    entity_type = db.Column(
+        db.String(50)
+    )
+
+    entity_id = db.Column(
+        db.String(50)
+    )
+
+    details = db.Column(
+        db.Text
+    )
+
+    created_at = db.Column(
+        db.DateTime,
+        default=lambda: datetime.now(timezone.utc)
+    )
+
+
+class AnomalyFlag(db.Model):
+
+    id = db.Column(
+        db.Integer,
+        primary_key=True
+    )
+
+    anomaly_id = db.Column(
+        db.String(50),
+        unique=True,
+        nullable=False
+    )
+
+    collection_id = db.Column(
+        db.String(40),
+        nullable=False
+    )
+
+    reason = db.Column(
+        db.String(255),
+        nullable=False
+    )
+
+    severity = db.Column(
+        db.String(20),
+        default="MEDIUM"
+    )
+
+    resolved = db.Column(
+        db.Boolean,
+        default=False
+    )
+
+    created_at = db.Column(
+        db.DateTime,
+        default=lambda: datetime.now(timezone.utc)
+    )
+
+
+# ============================================================
+# HELPER FUNCTIONS
+# ============================================================
+
+def iso(dt=None):
+    return (
+        dt or datetime.now(timezone.utc)
+    ).isoformat()
+
+
+def get_user(user_id):
+    return User.query.filter_by(
+        user_id=user_id
+    ).first()
+
+
+def make_id(prefix, model, field, start=1001):
+
+    number = start
+    column = getattr(model, field)
+
+    while model.query.filter(
+        column == f"{prefix}-{number}"
+    ).first():
+
+        number += 1
+
+    return f"{prefix}-{number}"
+
+
+def audit(
+    actor,
+    action,
+    entity_type="",
+    entity_id="",
+    details=""
+):
+
+    db.session.add(
+        AuditLog(
+            actor_id=actor,
+            action=action,
+            entity_type=entity_type,
+            entity_id=entity_id,
+            details=details
+        )
+    )
+
+
+def current_user():
+
+    claims = get_jwt()
+
+    return get_user(
+        claims.get("user_id")
+    )
+
+
+def role_required(*roles):
+
+    def decorator(function):
+
+        @wraps(function)
+        @jwt_required()
+        def wrapper(*args, **kwargs):
+
+            user = current_user()
+
+            if not user or not user.active:
+
+                return jsonify({
+                    "error":
+                    "User is inactive or not found"
+                }), 403
+
+            if user.role not in roles:
+
+                return jsonify({
+                    "error":
+                    "Access denied",
+                    "message":
+                    "Required role: " +
+                    ", ".join(roles)
+                }), 403
+
+            return function(
+                *args,
+                **kwargs
+            )
+
+        return wrapper
+
+    return decorator
+
+
+def rewards_for(user_id):
+
+    transactions = RewardTransaction.query.filter_by(
+        user_id=user_id
+    ).all()
+
+    points = sum(
+        transaction.points
+        for transaction in transactions
+    )
+
+    return {
+        "points": points,
+        "cash": round(
+            points * POINT_VALUE,
+            2
+        )
+    }
+
+
+def user_json(user):
+
+    return {
+        "user_id": user.user_id,
+        "name": user.name,
+        "role": user.role,
+        "phone": user.phone,
+        "active": user.active,
+        "created_at": iso(user.created_at)
+    }
+
+
+def collection_json(collection):
+
+    return {
+        "collection_id":
+            collection.collection_id,
+
+        "handover_id":
+            collection.handover_id,
+
+        "collector_id":
+            collection.collector_id,
+
+        "aggregator_id":
+            collection.aggregator_id,
+
+        "recycler_id":
+            collection.recycler_id,
+
+        "collector_weight":
+            collection.collector_weight,
+
+        "verified_weight":
+            collection.verified_weight,
+
+        "recycler_weight":
+            collection.recycler_weight,
+
+        "gps":
+            collection.gps,
+
+        "photo_hash":
+            collection.photo_hash,
+
+        "status":
+            collection.status,
+
+        "anomaly":
+            collection.anomaly,
+
+        "created_at":
+            iso(collection.created_at)
+    }
+
+
+def positive_number(value):
+
+    try:
+
+        value = float(value)
+
+        if value <= 0:
+            return False, 0
+
+        return True, value
+
+    except (
+        TypeError,
+        ValueError
+    ):
+
+        return False, 0
+
+
+# ============================================================
+# DEMO USERS
+# ============================================================
+
+def seed_users():
+
+    demo_users = [
+
+        (
+            "CUS-1001",
+            "Demo Customer",
+            "CUSTOMER",
+            "9000000001"
+        ),
+
+        (
+            "COL-2001",
+            "Demo Collector",
+            "COLLECTOR",
+            "9000000002"
+        ),
+
+        (
+            "AGG-3001",
+            "Demo Aggregator",
+            "AGGREGATOR",
+            "9000000003"
+        ),
+
+        (
+            "REC-4001",
+            "Demo Recycler",
+            "RECYCLER",
+            "9000000004"
+        ),
+
+        (
+            "BRD-5001",
+            "ECOGEN Electronics",
+            "BRAND",
+            "9000000005"
+        ),
+
+        (
+            "ADM-0001",
+            "System Supervisor",
+            "ADMIN",
+            "9000000006"
+        )
+    ]
+
+    for (
+        user_id,
+        name,
+        role,
+        phone
+    ) in demo_users:
+
+        if not get_user(user_id):
+
+            db.session.add(
+                User(
+                    user_id=user_id,
+                    name=name,
+                    role=role,
+                    phone=phone,
+                    active=True
+                )
+            )
+
+    db.session.commit()
+
+
+# ============================================================
+# DATABASE INITIALIZATION
+# ============================================================
+
+with app.app_context():
+
+    db.create_all()
+
+    seed_users()
+
+
+# ============================================================
+# BASIC ROUTES
 # ============================================================
 
 @app.route("/")
 def home():
+
     return send_from_directory(
-        os.path.dirname(os.path.abspath(__file__)),
+        BASE_DIR,
         "index.html"
     )
 
 
-# ============================================================
-# HEALTH
-# ============================================================
-
 @app.route("/health")
 def health():
+
     return jsonify({
-        "status": "healthy",
-        "service": "E-Waste EPR Platform"
+        "status": "online",
+        "service": "e-waste-epr-platform"
     })
 
 
 @app.route("/api/status")
-def status():
+def api_status():
+
     return jsonify({
+
         "status": "online",
-        "platform": "E-Waste EPR Platform",
-        "version": "2.0"
+
+        "database": "connected",
+
+        "reward_point_value":
+            POINT_VALUE,
+
+        "roles": [
+            "CUSTOMER",
+            "COLLECTOR",
+            "AGGREGATOR",
+            "RECYCLER",
+            "BRAND",
+            "ADMIN"
+        ]
     })
 
 
 # ============================================================
-# CUSTOMER
+# AUTHENTICATION
 # ============================================================
 
-@app.route("/api/customer/handover", methods=["POST"])
-def create_handover():
+@app.route(
+    "/api/auth/login",
+    methods=["POST"]
+)
+def login():
 
-    data = request.get_json() or {}
+    data = request.get_json(
+        silent=True
+    ) or {}
 
-    customer_id = data.get("customer_id")
-    phone = data.get("phone")
-    location = data.get("location")
-    product = data.get("product")
-    weight = data.get("weight")
-    collector_id = data.get("collector_id")
+    role = str(
+        data.get("role", "")
+    ).strip().upper()
 
-    if not customer_id:
-        return jsonify({"error": "Customer ID is required"}), 400
+    user_id = str(
+        data.get("user_id", "")
+    ).strip().upper()
 
-    if not phone:
-        return jsonify({"error": "Customer phone number is required"}), 400
+    allowed_roles = {
 
-    if not location:
-        return jsonify({"error": "Location is required"}), 400
-
-    if not product:
-        return jsonify({"error": "Product type is required"}), 400
-
-    if not weight:
-        return jsonify({"error": "Weight is required"}), 400
-
-    try:
-        weight = float(weight)
-    except ValueError:
-        return jsonify({"error": "Invalid weight"}), 400
-
-    handover_id = (
-        "HO-" +
-        datetime.now().strftime("%Y%m%d%H%M%S%f")
-    )
-
-    record = {
-        "handover_id": handover_id,
-        "customer_id": customer_id,
-        "phone": phone,
-        "location": location,
-        "product": product,
-        "weight": weight,
-        "collector_id": collector_id,
-        "status": "PENDING_PICKUP",
-        "risk_status": "LOW_RISK",
-        "created_at": datetime.now().isoformat()
+        "CUSTOMER",
+        "COLLECTOR",
+        "AGGREGATOR",
+        "RECYCLER",
+        "BRAND",
+        "ADMIN"
     }
 
-    customers[handover_id] = record
+    if role not in allowed_roles:
+
+        return jsonify({
+            "error":
+            "Invalid role"
+        }), 400
+
+    if not user_id:
+
+        return jsonify({
+            "error":
+            "ID is required"
+        }), 400
+
+    user = get_user(user_id)
+
+    if not user:
+
+        return jsonify({
+            "error":
+            "ID not found"
+        }), 404
+
+    if not user.active:
+
+        return jsonify({
+            "error":
+            "This account is inactive"
+        }), 403
+
+    # --------------------------------------------------------
+    # IMPORTANT SECURITY CHECK
+    # The entered ID must belong to the selected role.
+    # --------------------------------------------------------
+
+    if user.role != role:
+
+        return jsonify({
+
+            "error":
+            "Role mismatch",
+
+            "message":
+            f"{user_id} belongs to "
+            f"{user.role}, not {role}"
+        }), 403
+
+    token = create_access_token(
+
+        identity=user.user_id,
+
+        additional_claims={
+
+            "user_id":
+                user.user_id,
+
+            "role":
+                user.role
+        }
+    )
+
+    audit(
+        user.user_id,
+        "LOGIN",
+        "USER",
+        user.user_id,
+        "Successful demo login"
+    )
+
+    db.session.commit()
 
     return jsonify({
-        "message": "Handover request created",
-        "handover": record
+
+        "message":
+            "Login successful",
+
+        "access_token":
+            token,
+
+        "user":
+            user_json(user)
+    })
+
+
+@app.route("/api/me")
+@jwt_required()
+def me():
+
+    user = current_user()
+
+    if not user:
+
+        return jsonify({
+            "error":
+            "User not found"
+        }), 404
+
+    return jsonify({
+
+        "user":
+            user_json(user),
+
+        "rewards":
+            rewards_for(
+                user.user_id
+            )
+    })
+
+
+# ============================================================
+# CUSTOMER HANDOVER
+# ============================================================
+
+@app.route(
+    "/api/handover",
+    methods=["POST"]
+)
+@role_required("CUSTOMER")
+def create_handover():
+
+    user = current_user()
+
+    data = request.get_json(
+        silent=True
+    ) or {}
+
+    product = str(
+        data.get("product", "")
+    ).strip()
+
+    collector_id = str(
+        data.get("collector_id", "")
+    ).strip().upper()
+
+    if not product:
+
+        return jsonify({
+            "error":
+            "Product is required"
+        }), 400
+
+    collector = get_user(
+        collector_id
+    )
+
+    if (
+        not collector
+        or collector.role != "COLLECTOR"
+        or not collector.active
+    ):
+
+        return jsonify({
+            "error":
+            "Invalid or inactive collector ID"
+        }), 400
+
+    valid, weight = positive_number(
+        data.get("approximate_weight")
+    )
+
+    if not valid:
+
+        return jsonify({
+            "error":
+            "Weight must be greater than zero"
+        }), 400
+
+    handover_id = make_id(
+        "HO",
+        CustomerHandover,
+        "handover_id"
+    )
+
+    handover = CustomerHandover(
+
+        handover_id=handover_id,
+
+        customer_id=user.user_id,
+
+        collector_id=collector_id,
+
+        phone=
+            data.get("phone")
+            or user.phone,
+
+        location=
+            data.get("location", ""),
+
+        product=product,
+
+        approximate_weight=
+            weight,
+
+        serial_number=
+            data.get(
+                "serial_number",
+                ""
+            ),
+
+        photo_hash=
+            data.get(
+                "photo_hash",
+                ""
+            ),
+
+        status=
+            "HANDED_OVER"
+    )
+
+    db.session.add(handover)
+
+    audit(
+        user.user_id,
+        "CREATE_HANDOVER",
+        "HANDOVER",
+        handover_id,
+        product
+    )
+
+    db.session.commit()
+
+    return jsonify({
+
+        "message":
+            "Handover created",
+
+        "handover": {
+
+            "handover_id":
+                handover_id,
+
+            "customer_id":
+                user.user_id,
+
+            "collector_id":
+                collector_id,
+
+            "status":
+                handover.status
+        }
     }), 201
 
 
-@app.route("/api/customer/handovers")
+@app.route("/api/handovers")
+@jwt_required()
 def get_handovers():
 
-    return jsonify({
-        "count": len(customers),
-        "handovers": list(customers.values())
-    })
+    user = current_user()
 
+    query = CustomerHandover.query
 
-# ============================================================
-# COLLECTION
-# ============================================================
+    if user.role == "CUSTOMER":
 
-@app.route("/api/collection", methods=["POST"])
-def create_collection():
-
-    data = request.get_json() or {}
-
-    collector_id = data.get("collector_id")
-    item_type = data.get("item_type")
-    quantity = data.get("quantity")
-    weight = data.get("weight")
-    gps = data.get("gps")
-    image_hash = data.get("image_hash")
-    customer_id = data.get("customer_id")
-    handover_id = data.get("handover_id")
-
-    if not collector_id:
-        return jsonify({"error": "Collector ID is required"}), 400
-
-    if not item_type:
-        return jsonify({"error": "Item type is required"}), 400
-
-    if not weight:
-        return jsonify({"error": "Weight is required"}), 400
-
-    try:
-        weight = float(weight)
-    except ValueError:
-        return jsonify({"error": "Invalid weight"}), 400
-
-    collection_id = (
-        "EW-" +
-        datetime.now().strftime("%Y%m%d%H%M%S%f")
-    )
-
-    # If frontend does not provide hash,
-    # create a demo hash from transaction data.
-    if not image_hash:
-        hash_source = (
-            f"{collector_id}"
-            f"{item_type}"
-            f"{weight}"
-            f"{datetime.now().isoformat()}"
+        query = query.filter_by(
+            customer_id=user.user_id
         )
 
-        image_hash = hashlib.sha256(
-            hash_source.encode()
-        ).hexdigest()
+    elif user.role == "COLLECTOR":
 
-    record = {
-        "collection_id": collection_id,
-        "collector_id": collector_id,
-        "customer_id": customer_id,
-        "handover_id": handover_id,
-        "item_type": item_type,
-        "quantity": quantity,
-        "collector_weight": weight,
-        "aggregator_weight": None,
-        "recycler_weight": None,
-        "gps": gps,
-        "image_hash": image_hash,
-        "aggregator_verified": False,
-        "recycler_received": False,
-        "epr_status": "PENDING",
-        "collector_reward": 0,
-        "customer_reward": 0,
-        "created_at": datetime.now().isoformat()
-    }
+        query = query.filter_by(
+            collector_id=user.user_id
+        )
 
-    collections[collection_id] = record
+    rows = query.order_by(
+        CustomerHandover.id.desc()
+    ).limit(200).all()
 
-    # Link customer handover to collection
-    if handover_id in customers:
-        customers[handover_id]["status"] = "COLLECTED"
+    return jsonify([
+
+        {
+            "handover_id":
+                h.handover_id,
+
+            "customer_id":
+                h.customer_id,
+
+            "collector_id":
+                h.collector_id,
+
+            "product":
+                h.product,
+
+            "approximate_weight":
+                h.approximate_weight,
+
+            "serial_number":
+                h.serial_number,
+
+            "location":
+                h.location,
+
+            "status":
+                h.status,
+
+            "created_at":
+                iso(h.created_at)
+        }
+
+        for h in rows
+    ])
+
+
+# ============================================================
+# COLLECTOR COLLECTION
+# ============================================================
+
+@app.route(
+    "/api/collection",
+    methods=["POST"]
+)
+@role_required("COLLECTOR")
+def create_collection():
+
+    user = current_user()
+
+    data = request.get_json(
+        silent=True
+    ) or {}
+
+    handover_id = str(
+        data.get("handover_id", "")
+    ).strip().upper()
+
+    handover = CustomerHandover.query.filter_by(
+        handover_id=handover_id
+    ).first()
+
+    if not handover:
+
+        return jsonify({
+            "error":
+            "Handover not found"
+        }), 404
+
+    if handover.collector_id != user.user_id:
+
+        return jsonify({
+            "error":
+            "This handover is assigned to another collector"
+        }), 403
+
+    valid, weight = positive_number(
+        data.get("weight")
+    )
+
+    if not valid:
+
+        return jsonify({
+            "error":
+            "Weight must be greater than zero"
+        }), 400
+
+    image_hash = str(
+        data.get(
+            "image_hash",
+            ""
+        )
+    ).strip()
+
+    duplicate = False
+
+    if image_hash:
+
+        duplicate = (
+            Collection.query.filter_by(
+                photo_hash=image_hash
+            ).first()
+            is not None
+        )
+
+    collection_id = make_id(
+        "COLL",
+        Collection,
+        "collection_id"
+    )
+
+    collection = Collection(
+
+        collection_id=
+            collection_id,
+
+        handover_id=
+            handover_id,
+
+        collector_id=
+            user.user_id,
+
+        collector_weight=
+            weight,
+
+        gps=
+            data.get(
+                "gps",
+                ""
+            ),
+
+        photo_hash=
+            image_hash,
+
+        status=
+            "COLLECTED",
+
+        anomaly=
+            duplicate
+    )
+
+    db.session.add(
+        collection
+    )
+
+    handover.status = "COLLECTED"
+
+    if duplicate:
+
+        anomaly_id = make_id(
+            "ANOM",
+            AnomalyFlag,
+            "anomaly_id"
+        )
+
+        db.session.add(
+            AnomalyFlag(
+
+                anomaly_id=
+                    anomaly_id,
+
+                collection_id=
+                    collection_id,
+
+                reason=
+                    "Duplicate image hash detected",
+
+                severity=
+                    "HIGH"
+            )
+        )
+
+        audit(
+            user.user_id,
+            "ANOMALY_FLAGGED",
+            "COLLECTION",
+            collection_id,
+            "Duplicate image hash"
+        )
+
+    audit(
+        user.user_id,
+        "CREATE_COLLECTION",
+        "COLLECTION",
+        collection_id,
+        f"{weight} kg"
+    )
+
+    db.session.commit()
 
     return jsonify({
-        "message": "Collection created",
-        "collection": record
+
+        "message":
+            "Collection recorded",
+
+        "collection":
+            collection_json(
+                collection
+            )
     }), 201
 
 
 @app.route("/api/collections")
+@jwt_required()
 def get_collections():
 
-    return jsonify({
-        "count": len(collections),
-        "collections": list(collections.values())
-    })
+    user = current_user()
+
+    query = Collection.query
+
+    if user.role == "COLLECTOR":
+
+        query = query.filter_by(
+            collector_id=user.user_id
+        )
+
+    elif user.role == "AGGREGATOR":
+
+        query = query.filter(
+            (
+                Collection.aggregator_id
+                == user.user_id
+            )
+            |
+            (
+                Collection.aggregator_id
+                .is_(None)
+            )
+        )
+
+    elif user.role == "RECYCLER":
+
+        query = query.filter(
+            (
+                Collection.recycler_id
+                == user.user_id
+            )
+            |
+            (
+                Collection.recycler_id
+                .is_(None)
+            )
+        )
+
+    rows = query.order_by(
+        Collection.id.desc()
+    ).limit(300).all()
+
+    return jsonify([
+        collection_json(c)
+        for c in rows
+    ])
 
 
-@app.route("/api/collection/<collection_id>")
+@app.route(
+    "/api/collection/<collection_id>"
+)
+@jwt_required()
 def get_collection(collection_id):
 
-    record = collections.get(collection_id)
+    collection = Collection.query.filter_by(
+        collection_id=
+            collection_id.upper()
+    ).first()
 
-    if not record:
+    if not collection:
+
         return jsonify({
-            "error": "Collection not found"
+            "error":
+            "Collection not found"
         }), 404
 
-    return jsonify(record)
+    return jsonify(
+        collection_json(
+            collection
+        )
+    )
 
 
 # ============================================================
 # AGGREGATOR VERIFICATION
 # ============================================================
 
-@app.route("/api/collection/<collection_id>/verify", methods=["POST"])
+@app.route(
+    "/api/collection/<collection_id>/verify",
+    methods=["POST"]
+)
+@role_required("AGGREGATOR")
 def verify_collection(collection_id):
 
-    record = collections.get(collection_id)
+    user = current_user()
 
-    if not record:
+    collection = Collection.query.filter_by(
+        collection_id=
+            collection_id.upper()
+    ).first()
+
+    if not collection:
+
         return jsonify({
-            "error": "Collection not found"
+            "error":
+            "Collection not found"
         }), 404
 
-    data = request.get_json() or {}
-
-    aggregator_weight = data.get("aggregator_weight")
-
-    if aggregator_weight is None:
-        return jsonify({
-            "error": "Aggregator weight is required"
-        }), 400
-
-    try:
-        aggregator_weight = float(aggregator_weight)
-    except ValueError:
-        return jsonify({
-            "error": "Invalid aggregator weight"
-        }), 400
-
-    original_weight = float(record["collector_weight"])
-
-    # Allow 20% tolerance
-    lower = original_weight * 0.80
-    upper = original_weight * 1.20
-
-    if not (lower <= aggregator_weight <= upper):
-
-        record["aggregator_weight"] = aggregator_weight
-        record["aggregator_verified"] = False
+    if collection.status not in {
+        "COLLECTED",
+        "AGGREGATOR_VERIFIED"
+    }:
 
         return jsonify({
-            "message": "Weight mismatch. Manual review required.",
-            "status": "REVIEW_REQUIRED"
+            "error":
+            f"Cannot verify status "
+            f"{collection.status}"
         }), 400
 
-    record["aggregator_weight"] = aggregator_weight
-    record["aggregator_verified"] = True
+    data = request.get_json(
+        silent=True
+    ) or {}
+
+    valid, verified_weight = positive_number(
+        data.get("verified_weight")
+    )
+
+    if not valid:
+
+        return jsonify({
+            "error":
+            "Verified weight must be greater than zero"
+        }), 400
+
+    # --------------------------------------------------------
+    # Weight anomaly detection
+    # --------------------------------------------------------
+
+    if collection.collector_weight > 0:
+
+        difference = (
+            abs(
+                verified_weight
+                - collection.collector_weight
+            )
+            /
+            collection.collector_weight
+        )
+
+        if difference > 0.20:
+
+            collection.anomaly = True
+
+            anomaly_id = make_id(
+                "ANOM",
+                AnomalyFlag,
+                "anomaly_id"
+            )
+
+            db.session.add(
+                AnomalyFlag(
+
+                    anomaly_id=
+                        anomaly_id,
+
+                    collection_id=
+                        collection.collection_id,
+
+                    reason=
+                        "Aggregator weight differs by more than 20% from collector weight",
+
+                    severity=
+                        "MEDIUM"
+                )
+            )
+
+            audit(
+                user.user_id,
+                "WEIGHT_ANOMALY",
+                "COLLECTION",
+                collection.collection_id,
+                (
+                    f"Collector="
+                    f"{collection.collector_weight}, "
+                    f"Aggregator="
+                    f"{verified_weight}"
+                )
+            )
+
+    collection.aggregator_id = user.user_id
+
+    collection.verified_weight = (
+        verified_weight
+    )
+
+    collection.status = (
+        "AGGREGATOR_VERIFIED"
+    )
+
+    handover = CustomerHandover.query.filter_by(
+        handover_id=
+            collection.handover_id
+    ).first()
+
+    if handover:
+
+        handover.status = (
+            "AGGREGATOR_VERIFIED"
+        )
+
+    audit(
+        user.user_id,
+        "VERIFY_COLLECTION",
+        "COLLECTION",
+        collection.collection_id,
+        f"{verified_weight} kg"
+    )
+
+    db.session.commit()
 
     return jsonify({
-        "message": "Aggregator verification successful",
-        "collection": record
+
+        "message":
+            "Aggregator verification completed",
+
+        "collection":
+            collection_json(
+                collection
+            )
     })
 
 
 # ============================================================
-# RECYCLER RECEIPT
+# RECYCLER RECEIPT + EPR + REWARDS
 # ============================================================
 
-@app.route("/api/collection/<collection_id>/receive", methods=["POST"])
-def recycler_receive(collection_id):
+@app.route(
+    "/api/collection/<collection_id>/receive",
+    methods=["POST"]
+)
+@role_required("RECYCLER")
+def receive_collection(collection_id):
 
-    record = collections.get(collection_id)
+    user = current_user()
 
-    if not record:
+    collection = Collection.query.filter_by(
+        collection_id=
+            collection_id.upper()
+    ).first()
+
+    if not collection:
+
         return jsonify({
-            "error": "Collection not found"
+            "error":
+            "Collection not found"
         }), 404
 
-    # Recycler cannot confirm before aggregator
-    if not record["aggregator_verified"]:
+    # EPR cannot be generated before
+    # aggregator verification.
+
+    if collection.status != (
+        "AGGREGATOR_VERIFIED"
+    ):
+
         return jsonify({
-            "error": "Aggregator verification required first"
+            "error":
+            "Recycler receipt requires aggregator verification first"
         }), 400
 
-    data = request.get_json() or {}
+    data = request.get_json(
+        silent=True
+    ) or {}
 
-    recycler_weight = data.get("recycler_weight")
-
-    if recycler_weight is None:
-        return jsonify({
-            "error": "Recycler weight is required"
-        }), 400
-
-    try:
-        recycler_weight = float(recycler_weight)
-    except ValueError:
-        return jsonify({
-            "error": "Invalid recycler weight"
-        }), 400
-
-    aggregator_weight = float(
-        record["aggregator_weight"]
+    valid, recycler_weight = positive_number(
+        data.get("recycler_weight")
     )
 
-    lower = aggregator_weight * 0.80
-    upper = aggregator_weight * 1.20
-
-    if not (lower <= recycler_weight <= upper):
+    if not valid:
 
         return jsonify({
-            "error": "Recycler weight does not match verified weight",
-            "status": "REVIEW_REQUIRED"
+            "error":
+            "Recycler weight must be greater than zero"
         }), 400
 
-    if not record.get("image_hash"):
+    collection.recycler_id = user.user_id
 
-        return jsonify({
-            "error": "Image verification required"
-        }), 400
-
-    record["recycler_weight"] = recycler_weight
-    record["recycler_received"] = True
-    record["epr_status"] = "EPR_VERIFIED"
-
-    # ========================================================
-    # REWARD CALCULATION
-    # ========================================================
-
-    collector_points = int(
-        recycler_weight * COLLECTOR_POINTS_PER_KG
+    collection.recycler_weight = (
+        recycler_weight
     )
 
-    customer_points = int(
-        recycler_weight * CUSTOMER_POINTS_PER_KG
+    collection.status = (
+        "RECYCLER_RECEIVED"
     )
 
-    record["collector_reward"] = collector_points
-    record["customer_reward"] = customer_points
+    handover = CustomerHandover.query.filter_by(
+        handover_id=
+            collection.handover_id
+    ).first()
 
-    collector_id = record["collector_id"]
-    customer_id = record.get("customer_id")
+    if handover:
 
-    # Collector wallet
-    rewards.setdefault(collector_id, 0)
-    rewards[collector_id] += collector_points
+        handover.status = (
+            "RECYCLER_RECEIVED"
+        )
 
-    # Customer wallet
-    if customer_id:
-        rewards.setdefault(customer_id, 0)
-        rewards[customer_id] += customer_points
+    # --------------------------------------------------------
+    # EPR record
+    # --------------------------------------------------------
 
-    # Update customer handover
-    handover_id = record.get("handover_id")
+    epr_id = make_id(
+        "EPR",
+        EPRRecord,
+        "epr_id"
+    )
 
-    if handover_id in customers:
+    epr = EPRRecord(
 
-        customers[handover_id]["status"] = "VERIFIED"
+        epr_id=
+            epr_id,
 
-        customers[handover_id][
-            "reward_points"
-        ] = customer_points
+        collection_id=
+            collection.collection_id,
+
+        brand=
+            "ECOGEN Electronics",
+
+        verified_weight=
+            recycler_weight,
+
+        status=
+            "VERIFIED"
+    )
+
+    db.session.add(epr)
+
+    # --------------------------------------------------------
+    # Reward calculation
+    # --------------------------------------------------------
+
+    customer_points = round(
+        recycler_weight
+        * CUSTOMER_POINTS_PER_KG
+    )
+
+    collector_points = round(
+        recycler_weight
+        * COLLECTOR_POINTS_PER_KG
+    )
+
+    if handover:
+
+        db.session.add(
+            RewardTransaction(
+
+                transaction_id=
+                    make_id(
+                        "RWD",
+                        RewardTransaction,
+                        "transaction_id"
+                    ),
+
+                user_id=
+                    handover.customer_id,
+
+                points=
+                    customer_points,
+
+                transaction_type=
+                    "CREDIT",
+
+                reference_id=
+                    collection.collection_id,
+
+                description=
+                    (
+                        "Verified e-waste "
+                        "reward for "
+                        f"{recycler_weight} kg"
+                    )
+            )
+        )
+
+    db.session.add(
+        RewardTransaction(
+
+            transaction_id=
+                make_id(
+                    "RWD",
+                    RewardTransaction,
+                    "transaction_id"
+                ),
+
+            user_id=
+                collection.collector_id,
+
+            points=
+                collector_points,
+
+            transaction_type=
+                "CREDIT",
+
+            reference_id=
+                collection.collection_id,
+
+            description=
+                (
+                    "Collector reward for "
+                    f"{recycler_weight} kg"
+                )
+        )
+    )
+
+    audit(
+        user.user_id,
+        "RECYCLER_RECEIPT",
+        "COLLECTION",
+        collection.collection_id,
+        f"{recycler_weight} kg"
+    )
+
+    audit(
+        user.user_id,
+        "EPR_GENERATED",
+        "EPR",
+        epr_id,
+        f"{recycler_weight} kg"
+    )
+
+    db.session.commit()
 
     return jsonify({
-        "message": "Recycler confirmation successful",
-        "collection": record,
+
+        "message":
+            (
+                "Recycler receipt confirmed. "
+                "EPR generated and rewards credited."
+            ),
+
+        "epr": {
+
+            "epr_id":
+                epr.epr_id,
+
+            "collection_id":
+                epr.collection_id,
+
+            "brand":
+                epr.brand,
+
+            "verified_weight":
+                epr.verified_weight,
+
+            "status":
+                epr.status
+        },
+
         "rewards": {
-            "collector_points": collector_points,
-            "customer_points": customer_points
-        }
+
+            "customer_points":
+                customer_points,
+
+            "collector_points":
+                collector_points
+        },
+
+        "collection":
+            collection_json(
+                collection
+            )
     })
 
 
-# ============================================================
-# EPR RECORD
-# ============================================================
+@app.route(
+    "/api/epr/<epr_id>"
+)
+@jwt_required()
+def get_epr(epr_id):
 
-@app.route("/api/epr/<collection_id>")
-def get_epr(collection_id):
+    epr = EPRRecord.query.filter_by(
+        epr_id=
+            epr_id.upper()
+    ).first()
 
-    record = collections.get(collection_id)
+    if not epr:
 
-    if not record:
         return jsonify({
-            "error": "EPR record not found"
+            "error":
+            "EPR record not found"
         }), 404
 
-    if record["epr_status"] != "EPR_VERIFIED":
-        return jsonify({
-            "error": "EPR is not verified yet"
-        }), 400
-
     return jsonify({
-        "epr_id": "EPR-" + collection_id,
-        "collection_id": collection_id,
-        "verified_weight": record["recycler_weight"],
-        "status": "VERIFIED",
-        "collector_id": record["collector_id"],
-        "customer_id": record.get("customer_id")
+
+        "epr_id":
+            epr.epr_id,
+
+        "collection_id":
+            epr.collection_id,
+
+        "brand":
+            epr.brand,
+
+        "verified_weight":
+            epr.verified_weight,
+
+        "status":
+            epr.status,
+
+        "created_at":
+            iso(epr.created_at)
     })
 
 
@@ -428,13 +1758,569 @@ def get_epr(collection_id):
 # REWARDS
 # ============================================================
 
-@app.route("/api/rewards/<user_id>")
+@app.route(
+    "/api/rewards/<user_id>"
+)
+@jwt_required()
 def get_rewards(user_id):
 
+    requester = current_user()
+
+    target = get_user(
+        user_id.upper()
+    )
+
+    if not target:
+
+        return jsonify({
+            "error":
+            "User not found"
+        }), 404
+
+    if (
+        requester.role != "ADMIN"
+        and requester.user_id != target.user_id
+    ):
+
+        return jsonify({
+            "error":
+            "You can only view your own rewards"
+        }), 403
+
+    transactions = RewardTransaction.query.filter_by(
+        user_id=
+            target.user_id
+    ).order_by(
+        RewardTransaction.id.desc()
+    ).limit(100).all()
+
     return jsonify({
-        "user_id": user_id,
-        "points": rewards.get(user_id, 0),
-        "demo_cash_value": rewards.get(user_id, 0) * 0.10
+
+        "user_id":
+            target.user_id,
+
+        "role":
+            target.role,
+
+        "balance":
+            rewards_for(
+                target.user_id
+            ),
+
+        "transactions": [
+
+            {
+                "transaction_id":
+                    transaction.transaction_id,
+
+                "points":
+                    transaction.points,
+
+                "type":
+                    transaction.transaction_type,
+
+                "reference_id":
+                    transaction.reference_id,
+
+                "description":
+                    transaction.description,
+
+                "created_at":
+                    iso(
+                        transaction.created_at
+                    )
+            }
+
+            for transaction in transactions
+        ]
+    })
+
+
+# ============================================================
+# WITHDRAWAL REQUEST
+# ============================================================
+
+@app.route(
+    "/api/withdraw",
+    methods=["POST"]
+)
+@role_required(
+    "CUSTOMER",
+    "COLLECTOR"
+)
+def request_withdrawal():
+
+    user = current_user()
+
+    data = request.get_json(
+        silent=True
+    ) or {}
+
+    try:
+
+        points = int(
+            data.get(
+                "points",
+                0
+            )
+        )
+
+    except (
+        TypeError,
+        ValueError
+    ):
+
+        return jsonify({
+            "error":
+            "Points must be a number"
+        }), 400
+
+    upi_id = str(
+        data.get(
+            "upi_id",
+            ""
+        )
+    ).strip()
+
+    if points < MIN_WITHDRAW_POINTS:
+
+        return jsonify({
+            "error":
+            (
+                "Minimum withdrawal is "
+                f"{MIN_WITHDRAW_POINTS} points"
+            )
+        }), 400
+
+    if not upi_id or "@" not in upi_id:
+
+        return jsonify({
+            "error":
+            "Enter a valid demo UPI ID"
+        }), 400
+
+    balance = rewards_for(
+        user.user_id
+    )["points"]
+
+    pending = sum(
+
+        withdrawal.points
+
+        for withdrawal
+        in Withdrawal.query.filter_by(
+            user_id=user.user_id,
+            status="PENDING"
+        ).all()
+    )
+
+    available = balance - pending
+
+    if points > available:
+
+        return jsonify({
+            "error":
+            "Insufficient available reward points"
+        }), 400
+
+    withdrawal_id = make_id(
+        "WD",
+        Withdrawal,
+        "withdrawal_id"
+    )
+
+    amount = round(
+        points * POINT_VALUE,
+        2
+    )
+
+    withdrawal = Withdrawal(
+
+        withdrawal_id=
+            withdrawal_id,
+
+        user_id=
+            user.user_id,
+
+        points=
+            points,
+
+        amount=
+            amount,
+
+        upi_id=
+            upi_id,
+
+        status=
+            "PENDING"
+    )
+
+    db.session.add(
+        withdrawal
+    )
+
+    audit(
+        user.user_id,
+        "WITHDRAWAL_REQUEST",
+        "WITHDRAWAL",
+        withdrawal_id,
+        (
+            f"{points} points / "
+            f"₹{amount}"
+        )
+    )
+
+    db.session.commit()
+
+    return jsonify({
+
+        "message":
+            "Withdrawal request submitted for admin approval",
+
+        "withdrawal": {
+
+            "withdrawal_id":
+                withdrawal_id,
+
+            "points":
+                points,
+
+            "amount":
+                amount,
+
+            "upi_id":
+                upi_id,
+
+            "status":
+                "PENDING"
+        },
+
+        "note":
+            (
+                "Prototype ledger only; "
+                "no real payment is transferred."
+            )
+    }), 201
+
+
+@app.route("/api/withdrawals")
+@jwt_required()
+def get_withdrawals():
+
+    user = current_user()
+
+    if user.role == "ADMIN":
+
+        rows = Withdrawal.query.order_by(
+            Withdrawal.id.desc()
+        ).limit(200).all()
+
+    else:
+
+        rows = Withdrawal.query.filter_by(
+            user_id=user.user_id
+        ).order_by(
+            Withdrawal.id.desc()
+        ).limit(100).all()
+
+    return jsonify([
+
+        {
+            "withdrawal_id":
+                w.withdrawal_id,
+
+            "user_id":
+                w.user_id,
+
+            "points":
+                w.points,
+
+            "amount":
+                w.amount,
+
+            "upi_id":
+                w.upi_id,
+
+            "status":
+                w.status,
+
+            "created_at":
+                iso(w.created_at)
+        }
+
+        for w in rows
+    ])
+
+
+# ============================================================
+# ADMIN WITHDRAWAL APPROVAL
+# ============================================================
+
+@app.route(
+    "/api/admin/withdrawals/<withdrawal_id>/approve",
+    methods=["POST"]
+)
+@role_required("ADMIN")
+def approve_withdrawal(
+    withdrawal_id
+):
+
+    admin = current_user()
+
+    withdrawal = Withdrawal.query.filter_by(
+        withdrawal_id=
+            withdrawal_id.upper()
+    ).first()
+
+    if not withdrawal:
+
+        return jsonify({
+            "error":
+            "Withdrawal not found"
+        }), 404
+
+    if withdrawal.status != "PENDING":
+
+        return jsonify({
+            "error":
+            "Withdrawal is not pending"
+        }), 400
+
+    balance = rewards_for(
+        withdrawal.user_id
+    )["points"]
+
+    if withdrawal.points > balance:
+
+        withdrawal.status = (
+            "REJECTED"
+        )
+
+        audit(
+            admin.user_id,
+            "WITHDRAWAL_REJECTED",
+            "WITHDRAWAL",
+            withdrawal.withdrawal_id,
+            "Insufficient balance"
+        )
+
+        db.session.commit()
+
+        return jsonify({
+            "error":
+            "Insufficient balance; withdrawal rejected"
+        }), 400
+
+    withdrawal.status = "APPROVED"
+
+    db.session.add(
+        RewardTransaction(
+
+            transaction_id=
+                make_id(
+                    "RWD",
+                    RewardTransaction,
+                    "transaction_id"
+                ),
+
+            user_id=
+                withdrawal.user_id,
+
+            points=
+                -withdrawal.points,
+
+            transaction_type=
+                "DEBIT",
+
+            reference_id=
+                withdrawal.withdrawal_id,
+
+            description=
+                (
+                    "Approved demo "
+                    f"withdrawal ₹"
+                    f"{withdrawal.amount}"
+                )
+        )
+    )
+
+    audit(
+        admin.user_id,
+        "WITHDRAWAL_APPROVED",
+        "WITHDRAWAL",
+        withdrawal.withdrawal_id,
+        f"₹{withdrawal.amount}"
+    )
+
+    db.session.commit()
+
+    return jsonify({
+        "message":
+            "Withdrawal approved",
+        "withdrawal_id":
+            withdrawal.withdrawal_id
+    })
+
+
+@app.route(
+    "/api/admin/withdrawals/<withdrawal_id>/reject",
+    methods=["POST"]
+)
+@role_required("ADMIN")
+def reject_withdrawal(
+    withdrawal_id
+):
+
+    admin = current_user()
+
+    withdrawal = Withdrawal.query.filter_by(
+        withdrawal_id=
+            withdrawal_id.upper()
+    ).first()
+
+    if not withdrawal:
+
+        return jsonify({
+            "error":
+            "Withdrawal not found"
+        }), 404
+
+    if withdrawal.status != "PENDING":
+
+        return jsonify({
+            "error":
+            "Withdrawal is not pending"
+        }), 400
+
+    withdrawal.status = "REJECTED"
+
+    audit(
+        admin.user_id,
+        "WITHDRAWAL_REJECTED",
+        "WITHDRAWAL",
+        withdrawal.withdrawal_id,
+        "Rejected by supervisor"
+    )
+
+    db.session.commit()
+
+    return jsonify({
+        "message":
+            "Withdrawal rejected"
+    })
+
+
+# ============================================================
+# MAIN DASHBOARD
+# ============================================================
+
+@app.route("/api/dashboard")
+@jwt_required()
+def dashboard():
+
+    user = current_user()
+
+    total_users = User.query.count()
+
+    total_handovers = (
+        CustomerHandover.query.count()
+    )
+
+    total_collections = (
+        Collection.query.count()
+    )
+
+    verified_collections = (
+        Collection.query.filter(
+            Collection.status.in_([
+                "AGGREGATOR_VERIFIED",
+                "RECYCLER_RECEIVED"
+            ])
+        ).count()
+    )
+
+    verified_weight = (
+        db.session.query(
+            db.func.coalesce(
+                db.func.sum(
+                    EPRRecord.verified_weight
+                ),
+                0
+            )
+        ).scalar()
+        or 0
+    )
+
+    open_anomalies = (
+        AnomalyFlag.query.filter_by(
+            resolved=False
+        ).count()
+    )
+
+    pending_withdrawals = (
+        Withdrawal.query.filter_by(
+            status="PENDING"
+        ).count()
+    )
+
+    reward_points = (
+        db.session.query(
+            db.func.coalesce(
+                db.func.sum(
+                    RewardTransaction.points
+                ),
+                0
+            )
+        ).scalar()
+        or 0
+    )
+
+    return jsonify({
+
+        "role":
+            user.role,
+
+        "user":
+            user_json(user),
+
+        "system": {
+
+            "total_users":
+                total_users,
+
+            "total_handovers":
+                total_handovers,
+
+            "total_collections":
+                total_collections,
+
+            "verified_collections":
+                verified_collections,
+
+            "verified_weight_kg":
+                round(
+                    float(
+                        verified_weight
+                    ),
+                    2
+                ),
+
+            "open_anomalies":
+                open_anomalies,
+
+            "pending_withdrawals":
+                pending_withdrawals,
+
+            "reward_points_issued":
+                int(
+                    reward_points
+                )
+        },
+
+        "rewards":
+            rewards_for(
+                user.user_id
+            )
     })
 
 
@@ -442,58 +2328,353 @@ def get_rewards(user_id):
 # BRAND / PRO DASHBOARD
 # ============================================================
 
-@app.route("/api/dashboard")
-def dashboard():
+@app.route(
+    "/api/brand/dashboard"
+)
+@role_required(
+    "BRAND",
+    "ADMIN"
+)
+def brand_dashboard():
 
-    verified_records = [
-        c for c in collections.values()
-        if c["epr_status"] == "EPR_VERIFIED"
-    ]
+    # Fictional demo obligation.
+    # This is NOT a real company integration.
 
-    verified_weight = sum(
-        float(c["recycler_weight"])
-        for c in verified_records
+    obligation = 10000.0
+
+    verified = (
+        db.session.query(
+            db.func.coalesce(
+                db.func.sum(
+                    EPRRecord.verified_weight
+                ),
+                0
+            )
+        ).scalar()
+        or 0
+    )
+
+    verified = float(
+        verified
     )
 
     remaining = max(
-        EPR_OBLIGATION_KG - verified_weight,
+        obligation - verified,
         0
     )
 
     compliance = (
-        verified_weight / EPR_OBLIGATION_KG
-    ) * 100 if EPR_OBLIGATION_KG else 0
+        (verified / obligation) * 100
+        if obligation
+        else 0
+    )
+
+    eprs = EPRRecord.query.order_by(
+        EPRRecord.id.desc()
+    ).limit(100).all()
 
     return jsonify({
 
-        "brand": "ECOGEN Electronics",
+        "brand":
+            "ECOGEN Electronics",
 
-        "epr_obligation_kg": EPR_OBLIGATION_KG,
+        "demo":
+            True,
 
-        "verified_epr_kg": round(
-            verified_weight, 2
-        ),
+        "obligation_kg":
+            obligation,
 
-        "remaining_kg": round(
-            remaining, 2
-        ),
+        "verified_epr_kg":
+            round(
+                verified,
+                2
+            ),
 
-        "compliance_percentage": round(
-            compliance, 2
-        ),
+        "remaining_kg":
+            round(
+                remaining,
+                2
+            ),
 
-        "verified_records": verified_records
+        "compliance_percent":
+            round(
+                compliance,
+                2
+            ),
+
+        "epr_records": [
+
+            {
+                "epr_id":
+                    epr.epr_id,
+
+                "collection_id":
+                    epr.collection_id,
+
+                "weight_kg":
+                    epr.verified_weight,
+
+                "status":
+                    epr.status,
+
+                "created_at":
+                    iso(
+                        epr.created_at
+                    )
+            }
+
+            for epr in eprs
+        ]
     })
 
 
 # ============================================================
-# RUN
+# ADMIN - USERS
+# ============================================================
+
+@app.route("/api/admin/users")
+@role_required("ADMIN")
+def admin_users():
+
+    users = User.query.order_by(
+        User.id
+    ).all()
+
+    return jsonify([
+        user_json(user)
+        for user in users
+    ])
+
+
+@app.route(
+    "/api/admin/users/<user_id>/toggle",
+    methods=["POST"]
+)
+@role_required("ADMIN")
+def toggle_user(user_id):
+
+    admin = current_user()
+
+    user = get_user(
+        user_id.upper()
+    )
+
+    if not user:
+
+        return jsonify({
+            "error":
+            "User not found"
+        }), 404
+
+    if user.user_id == admin.user_id:
+
+        return jsonify({
+            "error":
+            "Supervisor cannot deactivate self"
+        }), 400
+
+    user.active = not user.active
+
+    audit(
+        admin.user_id,
+        "TOGGLE_USER",
+        "USER",
+        user.user_id,
+        f"active={user.active}"
+    )
+
+    db.session.commit()
+
+    return jsonify({
+
+        "message":
+            "User status updated",
+
+        "active":
+            user.active
+    })
+
+
+# ============================================================
+# ADMIN - ANOMALIES
+# ============================================================
+
+@app.route("/api/admin/anomalies")
+@role_required("ADMIN")
+def admin_anomalies():
+
+    anomalies = AnomalyFlag.query.order_by(
+        AnomalyFlag.id.desc()
+    ).limit(200).all()
+
+    return jsonify([
+
+        {
+            "anomaly_id":
+                anomaly.anomaly_id,
+
+            "collection_id":
+                anomaly.collection_id,
+
+            "reason":
+                anomaly.reason,
+
+            "severity":
+                anomaly.severity,
+
+            "resolved":
+                anomaly.resolved,
+
+            "created_at":
+                iso(
+                    anomaly.created_at
+                )
+        }
+
+        for anomaly in anomalies
+    ])
+
+
+@app.route(
+    "/api/admin/anomalies/<anomaly_id>/resolve",
+    methods=["POST"]
+)
+@role_required("ADMIN")
+def resolve_anomaly(anomaly_id):
+
+    admin = current_user()
+
+    anomaly = AnomalyFlag.query.filter_by(
+        anomaly_id=
+            anomaly_id.upper()
+    ).first()
+
+    if not anomaly:
+
+        return jsonify({
+            "error":
+            "Anomaly not found"
+        }), 404
+
+    anomaly.resolved = True
+
+    audit(
+        admin.user_id,
+        "RESOLVE_ANOMALY",
+        "ANOMALY",
+        anomaly.anomaly_id,
+        anomaly.reason
+    )
+
+    db.session.commit()
+
+    return jsonify({
+        "message":
+            "Anomaly resolved"
+    })
+
+
+# ============================================================
+# ADMIN - AUDIT TRAIL
+# ============================================================
+
+@app.route("/api/admin/audit")
+@role_required("ADMIN")
+def admin_audit():
+
+    logs = AuditLog.query.order_by(
+        AuditLog.id.desc()
+    ).limit(300).all()
+
+    return jsonify([
+
+        {
+            "actor_id":
+                log.actor_id,
+
+            "action":
+                log.action,
+
+            "entity_type":
+                log.entity_type,
+
+            "entity_id":
+                log.entity_id,
+
+            "details":
+                log.details,
+
+            "created_at":
+                iso(
+                    log.created_at
+                )
+        }
+
+        for log in logs
+    ])
+
+
+# ============================================================
+# ADMIN - COLLECTION MONITOR
+# ============================================================
+
+@app.route("/api/admin/collections")
+@role_required("ADMIN")
+def admin_collections():
+
+    rows = Collection.query.order_by(
+        Collection.id.desc()
+    ).limit(300).all()
+
+    return jsonify([
+        collection_json(row)
+        for row in rows
+    ])
+
+
+# ============================================================
+# ERROR HANDLERS
+# ============================================================
+
+@app.errorhandler(404)
+def not_found(error):
+
+    return jsonify({
+        "error":
+        "Route not found"
+    }), 404
+
+
+@app.errorhandler(500)
+def server_error(error):
+
+    db.session.rollback()
+
+    return jsonify({
+
+        "error":
+            "Server error",
+
+        "details":
+            str(error)
+    }), 500
+
+
+# ============================================================
+# RUN SERVER
 # ============================================================
 
 if __name__ == "__main__":
 
+    port = int(
+        os.getenv(
+            "PORT",
+            "5000"
+        )
+    )
+
     app.run(
         host="0.0.0.0",
-        port=5000,
+        port=port,
         debug=True
     )
