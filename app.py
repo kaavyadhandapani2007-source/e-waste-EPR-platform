@@ -1,6 +1,7 @@
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, send_from_directory
 from datetime import datetime
 import hashlib
+import os
 
 app = Flask(__name__)
 
@@ -20,13 +21,7 @@ collections = {}
 
 @app.route("/")
 def home():
-    return jsonify({
-        "status": "online",
-        "project": "E-Waste EPR Platform",
-        "message": "Backend is running successfully!",
-        "version": "1.0"
-    })
-
+    return send_from_directory(".","index.html")
 
 # ============================================================
 # SYSTEM STATUS
@@ -595,6 +590,6 @@ if __name__ == "__main__":
 
     app.run(
         host="0.0.0.0",
-        port=5000,
+        port=int(os.environ.get("PORT",5000,))
         debug=True
     )
