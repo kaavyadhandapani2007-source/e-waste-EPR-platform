@@ -722,6 +722,12 @@
             background: #182638;
         }
 
+        .small-btn:disabled,
+        .submit-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
 
         .submit-btn {
 
@@ -1519,6 +1525,36 @@
                             <div class="form-group">
 
                                 <label>
+                                    CUSTOMER ID
+                                </label>
+
+                                <input
+                                    type="text"
+                                    id="customerId"
+                                    placeholder="CUS001"
+                                >
+
+                            </div>
+
+
+                            <div class="form-group">
+
+                                <label>
+                                    HANDOVER ID
+                                </label>
+
+                                <input
+                                    type="text"
+                                    id="handoverId"
+                                    placeholder="HO-XXXXXXXX"
+                                >
+
+                            </div>
+
+
+                            <div class="form-group">
+
+                                <label>
                                     ITEM TYPE
                                 </label>
 
@@ -2039,7 +2075,7 @@
 
                         <input
                             id="recyclerCollectionId"
-                            placeholder="EW-20260910123456"
+                            placeholder="EW-XXXXXXXX"
                         >
 
                     </div>
@@ -2554,588 +2590,445 @@
 
 
 <script>
-
     /* =====================================================
-       DATA
+       ECO TRACE - CONNECTED FRONTEND
+       Backend: Flask REST API
     ===================================================== */
 
-    let collections = [];
+    const API = "";
 
+    let collections = [];
 
     /* =====================================================
        PAGE NAVIGATION
     ===================================================== */
 
     function showPage(pageId, button) {
+        document.querySelectorAll(".page").forEach(page => {
+            page.classList.remove("active");
+        });
 
-        document
-            .querySelectorAll(".page")
-            .forEach(page => {
+        const page = document.getElementById(pageId);
 
-                page.classList.remove("active");
+        if (page) {
+            page.classList.add("active");
+        }
 
-            });
+        document.querySelectorAll(".nav-item").forEach(item => {
+            item.classList.remove("active");
+        });
 
-
-        document
-            .getElementById(pageId)
-            .classList.add("active");
-
-
-        document
-            .querySelectorAll(".nav-item")
-            .forEach(item => {
-
-                item.classList.remove("active");
-
-            });
-
-
-        button.classList.add("active");
-
+        if (button) {
+            button.classList.add("active");
+        }
 
         const titles = {
-
             collector: [
                 "Collector Dashboard",
                 "Record and track your e-waste collections"
             ],
-
             aggregator: [
                 "Aggregator Dashboard",
                 "Verify incoming collection records"
             ],
-
             recycler: [
                 "Recycler Portal",
                 "Confirm received e-waste material"
             ],
-
             brand: [
                 "Brand / PRO Dashboard",
                 "Monitor EPR compliance and fulfillment"
             ]
-
         };
 
-
-        document
-            .getElementById("pageTitle")
-            .textContent =
-            titles[pageId][0];
-
-
-        document
-            .getElementById("pageSubtitle")
-            .textContent =
-            titles[pageId][1];
-
-    }
-
-
-    /* =====================================================
-       CONNECTION STATUS
-    ===================================================== */
-
-    function updateConnection() {
-
-        const text =
-            document.getElementById(
-                "connectionText"
-            );
-
-
-        const sync =
-            document.getElementById(
-                "syncStatus"
-            );
-
-
-        if (navigator.onLine) {
-
-            text.textContent =
-                "Online";
-
-            sync.textContent =
-                "Online";
-
-        } else {
-
-            text.textContent =
-                "Offline";
-
-            sync.textContent =
-                "Offline";
-
+        if (titles[pageId]) {
+            document.getElementById("pageTitle").textContent = titles[pageId][0];
+            document.getElementById("pageSubtitle").textContent = titles[pageId][1];
         }
 
+        if (pageId === "aggregator") {
+            loadCollections();
+        } else if (pageId === "brand") {
+            loadBrandDashboard();
+        } else if (pageId === "collector") {
+            loadCollections();
+        }
     }
-
-
-    updateConnection();
-
-
-    window.addEventListener(
-        "online",
-        updateConnection
-    );
-
-
-    window.addEventListener(
-        "offline",
-        updateConnection
-    );
-
 
     /* =====================================================
        TOAST
     ===================================================== */
 
     function showToast(message) {
-
-        const toast =
-            document.getElementById("toast");
-
-
+        const toast = document.getElementById("toast");
         toast.textContent = message;
-
         toast.classList.add("show");
 
-
         setTimeout(() => {
-
             toast.classList.remove("show");
-
         }, 3000);
-
     }
 
+    /* =====================================================
+       CONNECTION STATUS
+    ===================================================== */
+
+    function updateConnection() {
+        const text = document.getElementById("connectionText");
+        const sync = document.getElementById("syncStatus");
+
+        if (navigator.onLine) {
+            text.textContent = "Online";
+            sync.textContent = "Online";
+        } else {
+            text.textContent = "Offline";
+            sync.textContent = "Offline";
+        }
+    }
+
+    window.addEventListener("online", updateConnection);
+    window.addEventListener("offline", updateConnection);
+
+    /* =====================================================
+       API HELPER
+    ===================================================== */
+
+    async function apiRequest(url, options = {}) {
+        const response = await fetch(API + url, {
+            headers: {
+                "Content-Type": "application/json",
+                ...(options.headers || {})
+            },
+            ...options
+        });
+
+        let data = {};
+
+        try {
+            data = await response.json();
+        } catch (error) {
+            data = {
+                success: false,
+                message: "Server returned an invalid response."
+            };
+        }
+
+        if (!response.ok) {
+            throw new Error(
+                data.message || `Request failed (${response.status})`
+            );
+        }
+
+        return data;
+    }
 
     /* =====================================================
        GPS
     ===================================================== */
 
     function getLocation() {
-
         if (!navigator.geolocation) {
-
-            showToast(
-                "GPS is not supported by this browser."
-            );
-
+            showToast("❌ GPS is not supported by this browser.");
             return;
         }
 
-
-        showToast(
-            "📍 Capturing location..."
-        );
-
+        showToast("📍 Capturing location...");
 
         navigator.geolocation.getCurrentPosition(
+            position => {
+                const lat = position.coords.latitude.toFixed(6);
+                const lng = position.coords.longitude.toFixed(6);
 
-            function(position) {
-
-                const lat =
-                    position.coords.latitude
-                    .toFixed(6);
-
-                const lng =
-                    position.coords.longitude
-                    .toFixed(6);
-
-
-                document
-                    .getElementById("location")
-                    .value =
+                document.getElementById("location").value =
                     `${lat}, ${lng}`;
 
-
-                showToast(
-                    "📍 GPS location captured!"
-                );
-
+                showToast("📍 GPS location captured!");
             },
-
-
-            function() {
-
-                showToast(
-                    "Unable to capture GPS location."
-                );
-
+            error => {
+                console.error("GPS error:", error);
+                showToast("❌ Unable to capture GPS location.");
+            },
+            {
+                enableHighAccuracy: true,
+                timeout: 10000,
+                maximumAge: 0
             }
-
         );
-
     }
-
 
     /* =====================================================
        PHOTO
     ===================================================== */
 
-    document
-        .getElementById("photo")
-        .addEventListener(
-            "change",
-            function() {
+    document.getElementById("photo").addEventListener("change", event => {
+        const file = event.target.files[0];
 
-                if (this.files.length > 0) {
+        if (file) {
+            document.getElementById("photoName").textContent =
+                "📸 " + file.name;
+        } else {
+            document.getElementById("photoName").textContent = "";
+        }
+    });
 
-                    document
-                        .getElementById("photoName")
-                        .textContent =
-                        "📸 " +
-                        this.files[0].name;
+    /* =====================================================
+       IMAGE SHA-256 HASH
+    ===================================================== */
 
-                }
+    async function getImageHash(file) {
+        if (!file) {
+            return "";
+        }
 
-            }
-        );
+        const buffer = await file.arrayBuffer();
+        const hashBuffer = await crypto.subtle.digest("SHA-256", buffer);
 
+        return Array.from(new Uint8Array(hashBuffer))
+            .map(byte => byte.toString(16).padStart(2, "0"))
+            .join("");
+    }
 
     /* =====================================================
        COLLECTION FORM
     ===================================================== */
 
-    document
-        .getElementById("collectionForm")
-        .addEventListener(
-            "submit",
-            function(event) {
+    document.getElementById("collectionForm").addEventListener(
+        "submit",
+        async function(event) {
+            event.preventDefault();
 
-                event.preventDefault();
+            const collectorId =
+                document.getElementById("collectorId").value.trim();
 
+            const customerIdElement =
+                document.getElementById("customerId");
 
-                const collectorId =
-                    document
-                        .getElementById("collectorId")
-                        .value;
+            const handoverIdElement =
+                document.getElementById("handoverId");
 
+            const customerId =
+                customerIdElement
+                    ? customerIdElement.value.trim()
+                    : "";
 
-                const itemType =
-                    document
-                        .getElementById("itemType")
-                        .value;
+            const handoverId =
+                handoverIdElement
+                    ? handoverIdElement.value.trim()
+                    : "";
 
+            const itemType =
+                document.getElementById("itemType").value;
 
-                const quantity =
-                    Number(
-                        document
-                            .getElementById("quantity")
-                            .value
-                    );
+            const quantity =
+                Number(document.getElementById("quantity").value);
 
+            const weight =
+                Number(document.getElementById("weight").value);
 
-                const weight =
-                    Number(
-                        document
-                            .getElementById("weight")
-                            .value
-                    );
+            const gps =
+                document.getElementById("location").value.trim();
 
+            const photo =
+                document.getElementById("photo").files[0];
 
-                const location =
-                    document
-                        .getElementById("location")
-                        .value;
+            if (!collectorId) {
+                showToast("❌ Enter Collector ID.");
+                return;
+            }
 
+            if (!itemType) {
+                showToast("❌ Select an item type.");
+                return;
+            }
 
-                const collectionId =
-                    "EW-" +
-                    Date.now();
+            if (!Number.isFinite(quantity) || quantity < 1) {
+                showToast("❌ Enter a valid quantity.");
+                return;
+            }
 
+            if (!Number.isFinite(weight) || weight <= 0) {
+                showToast("❌ Enter a valid weight.");
+                return;
+            }
 
-                const collection = {
+            const button = this.querySelector(".submit-btn");
+            const originalText = button.textContent;
 
-                    collection_id:
-                        collectionId,
+            button.disabled = true;
+            button.textContent = "⏳ Saving...";
 
-                    collector_id:
-                        collectorId,
+            try {
+                const imageHash = await getImageHash(photo);
 
-                    item_type:
-                        itemType,
-
-                    quantity:
-                        quantity,
-
-                    collector_weight:
-                        weight,
-
-                    aggregator_weight:
-                        null,
-
-                    recycler_weight:
-                        null,
-
-                    location:
-                        location,
-
-                    timestamp:
-                        new Date()
-                        .toISOString(),
-
-                    status:
-                        "SUBMITTED",
-
-                    epr_verified:
-                        false,
-
-                    reward_points:
-                        0
-
+                const payload = {
+                    collector_id: collectorId,
+                    customer_id: customerId,
+                    handover_id: handoverId,
+                    item_type: itemType,
+                    quantity: quantity,
+                    weight: weight,
+                    gps: gps,
+                    image_hash: imageHash
                 };
 
-
-                collections.push(
-                    collection
+                const data = await apiRequest(
+                    "/api/collection",
+                    {
+                        method: "POST",
+                        body: JSON.stringify(payload)
+                    }
                 );
-
-
-                updateDashboards();
-
 
                 showToast(
-                    "✅ Collection recorded successfully!"
+                    "✅ Collection recorded: " +
+                    data.collection.collection_id
                 );
-
 
                 this.reset();
 
+                document.getElementById("location").value = "";
+                document.getElementById("photoName").textContent = "";
 
-                document
-                    .getElementById("location")
-                    .value = "";
+                await loadCollections();
 
+            } catch (error) {
+                console.error(error);
+                showToast("❌ " + error.message);
+            } finally {
+                button.disabled = false;
+                button.textContent = originalText;
             }
-        );
-
+        }
+    );
 
     /* =====================================================
-       UPDATE DASHBOARDS
+       LOAD COLLECTIONS FROM FLASK
+    ===================================================== */
+
+    async function loadCollections() {
+        try {
+            const data = await apiRequest("/api/collections");
+
+            collections = Array.isArray(data.collections)
+                ? data.collections
+                : [];
+
+            updateDashboards();
+
+        } catch (error) {
+            console.error("Collection loading error:", error);
+            showToast("❌ Could not load collections.");
+        }
+    }
+
+    /* =====================================================
+       DASHBOARD CALCULATIONS
     ===================================================== */
 
     function updateDashboards() {
-
         let totalWeight = 0;
-
         let verifiedWeight = 0;
-
         let pending = 0;
-
         let verified = 0;
-
         let flagged = 0;
-
         let points = 0;
 
+        collections.forEach(item => {
+            totalWeight += Number(item.collector_weight || item.weight || 0);
 
-        collections.forEach(
-            item => {
-
-                totalWeight +=
-                    item.collector_weight;
-
-
-                points +=
-                    item.reward_points;
-
-
-                if (item.epr_verified) {
-
-                    verifiedWeight +=
-                        item.recycler_weight;
-
-                    verified++;
-
-                } else if (
-                    item.status === "FLAGGED"
-                ) {
-
-                    flagged++;
-
-                } else {
-
-                    pending++;
-
-                }
-
-            }
-        );
-
-
-        /* Collector */
-
-        document
-            .getElementById("totalCollections")
-            .textContent =
-            collections.length;
-
-
-        document
-            .getElementById("totalWeight")
-            .textContent =
-            totalWeight.toFixed(2) +
-            " kg";
-
-
-        document
-            .getElementById("rewardPoints")
-            .textContent =
-            points;
-
-
-        /* Aggregator */
-
-        document
-            .getElementById("pendingCount")
-            .textContent =
-            pending;
-
-
-        document
-            .getElementById("aggregatorWeight")
-            .textContent =
-            totalWeight.toFixed(2) +
-            " kg";
-
-
-        document
-            .getElementById("verifiedCount")
-            .textContent =
-            verified;
-
-
-        document
-            .getElementById("flaggedCount")
-            .textContent =
-            flagged;
-
-
-        /* Brand */
-
-        const obligation = 10000;
-
-
-        const remaining =
-            Math.max(
-                obligation -
-                verifiedWeight,
+            points += Number(
+                item.collector_reward ||
+                item.reward_points ||
                 0
             );
 
+            if (item.status === "EPR_VERIFIED" || item.epr_verified) {
+                verifiedWeight += Number(item.recycler_weight || 0);
+                verified++;
+            } else if (item.status === "FLAGGED") {
+                flagged++;
+            } else {
+                pending++;
+            }
+        });
 
-        const compliance =
-            Math.min(
-                (verifiedWeight /
-                obligation) * 100,
-                100
-            );
+        /* Collector */
+        document.getElementById("totalCollections").textContent =
+            collections.length;
 
+        document.getElementById("totalWeight").textContent =
+            totalWeight.toFixed(2) + " kg";
 
-        document
-            .getElementById(
-                "brandFulfillment"
-            )
-            .textContent =
-            verifiedWeight.toFixed(2) +
-            " kg";
+        document.getElementById("rewardPoints").textContent =
+            points;
 
+        /* Aggregator */
+        document.getElementById("pendingCount").textContent =
+            pending;
 
-        document
-            .getElementById(
-                "brandRemaining"
-            )
-            .textContent =
-            remaining.toFixed(2) +
-            " kg";
+        document.getElementById("aggregatorWeight").textContent =
+            totalWeight.toFixed(2) + " kg";
 
+        document.getElementById("verifiedCount").textContent =
+            verified;
 
-        document
-            .getElementById(
-                "compliance"
-            )
-            .textContent =
-            compliance.toFixed(1) +
-            "%";
+        document.getElementById("flaggedCount").textContent =
+            flagged;
 
+        /* Brand */
+        const obligation = 10000;
 
-        document
-            .getElementById(
-                "informalWeight"
-            )
-            .textContent =
-            verifiedWeight.toFixed(2) +
-            " kg";
+        const remaining = Math.max(
+            obligation - verifiedWeight,
+            0
+        );
 
+        const compliance = Math.min(
+            (verifiedWeight / obligation) * 100,
+            100
+        );
 
-        document
-            .getElementById(
-                "progressText"
-            )
-            .textContent =
-            compliance.toFixed(1) +
-            "%";
+        document.getElementById("brandFulfillment").textContent =
+            verifiedWeight.toFixed(2) + " kg";
 
+        document.getElementById("brandRemaining").textContent =
+            remaining.toFixed(2) + " kg";
 
-        document
-            .getElementById(
-                "circleValue"
-            )
-            .textContent =
-            compliance.toFixed(1) +
-            "%";
+        document.getElementById("compliance").textContent =
+            compliance.toFixed(1) + "%";
 
+        document.getElementById("informalWeight").textContent =
+            verifiedWeight.toFixed(2) + " kg";
 
-        document
-            .getElementById(
-                "progressBar"
-            )
-            .style.width =
+        document.getElementById("progressText").textContent =
+            compliance.toFixed(1) + "%";
+
+        document.getElementById("circleValue").textContent =
+            compliance.toFixed(1) + "%";
+
+        document.getElementById("progressBar").style.width =
             compliance + "%";
 
-
-        document
-            .getElementById(
-                "complianceCircle"
-            )
-            .style.background =
+        document.getElementById("complianceCircle").style.background =
             `conic-gradient(
-                #22c55e
-                ${compliance * 3.6}deg,
-                #182231
-                0deg
+                #22c55e ${compliance * 3.6}deg,
+                #182231 0deg
             )`;
 
-
         updateCollectorTable();
-
         updateAggregatorTable();
-
         updateBrandTable();
-
         updateActivity();
-
     }
-
 
     /* =====================================================
        COLLECTOR TABLE
     ===================================================== */
 
     function updateCollectorTable() {
-
-        const table =
-            document
-                .getElementById(
-                    "collectorTable"
-                );
-
+        const table = document.getElementById("collectorTable");
 
         if (collections.length === 0) {
-
             table.innerHTML = `
                 <tr>
                     <td colspan="5"
@@ -3144,88 +3037,59 @@
                     </td>
                 </tr>
             `;
-
             return;
         }
 
-
-        table.innerHTML = "";
-
-
-        collections
+        table.innerHTML = collections
             .slice()
             .reverse()
-            .forEach(item => {
+            .map(item => {
+                const verified =
+                    item.status === "EPR_VERIFIED" ||
+                    item.epr_verified;
 
                 const statusClass =
-                    item.epr_verified
-                    ? "badge-green"
-                    : "badge-orange";
-
+                    verified ? "badge-green" : "badge-orange";
 
                 const statusText =
-                    item.epr_verified
-                    ? "EPR VERIFIED"
-                    : item.status;
+                    verified
+                        ? "EPR VERIFIED"
+                        : item.status || "SUBMITTED";
 
+                const timestamp =
+                    item.created_at ||
+                    item.timestamp ||
+                    new Date().toISOString();
 
-                table.innerHTML += `
-
+                return `
                     <tr>
-
+                        <td>${escapeHtml(item.collection_id || "-")}</td>
+                        <td>${escapeHtml(item.item_type || "-")}</td>
+                        <td>${Number(
+                            item.collector_weight ||
+                            item.weight ||
+                            0
+                        ).toFixed(2)} kg</td>
+                        <td>${new Date(timestamp).toLocaleTimeString()}</td>
                         <td>
-                            ${item.collection_id}
-                        </td>
-
-                        <td>
-                            ${item.item_type}
-                        </td>
-
-                        <td>
-                            ${item.collector_weight}
-                            kg
-                        </td>
-
-                        <td>
-                            ${new Date(
-                                item.timestamp
-                            ).toLocaleTimeString()}
-                        </td>
-
-                        <td>
-
-                            <span
-                                class="badge ${statusClass}"
-                            >
-                                ${statusText}
+                            <span class="badge ${statusClass}">
+                                ${escapeHtml(statusText)}
                             </span>
-
                         </td>
-
                     </tr>
-
                 `;
-
-            });
-
+            })
+            .join("");
     }
-
 
     /* =====================================================
        AGGREGATOR TABLE
     ===================================================== */
 
     function updateAggregatorTable() {
-
-        const table =
-            document
-                .getElementById(
-                    "aggregatorTable"
-                );
-
+        const table = document.getElementById("aggregatorTable");
 
         if (collections.length === 0) {
-
             table.innerHTML = `
                 <tr>
                     <td colspan="5"
@@ -3234,78 +3098,303 @@
                     </td>
                 </tr>
             `;
-
             return;
         }
 
+        table.innerHTML = collections.map(item => {
+            const status = item.status || "COLLECTED";
 
-        table.innerHTML = "";
+            const verified =
+                item.aggregator_verified ||
+                status === "AGGREGATOR_VERIFIED" ||
+                status === "EPR_VERIFIED";
 
+            const badgeClass =
+                verified ? "badge-green" : "badge-orange";
 
-        collections.forEach(item => {
+            const action = verified
+                ? `<span class="badge badge-green">VERIFIED</span>`
+                : `
+                    <button
+                        class="small-btn"
+                        onclick="verifyCollection('${escapeJs(
+                            item.collection_id
+                        )}')"
+                    >
+                        Verify
+                    </button>
+                `;
 
-            table.innerHTML += `
-
+            return `
                 <tr>
-
+                    <td>${escapeHtml(item.collection_id || "-")}</td>
+                    <td>${escapeHtml(item.collector_id || "-")}</td>
+                    <td>${escapeHtml(item.item_type || "-")}</td>
+                    <td>${Number(
+                        item.collector_weight ||
+                        item.weight ||
+                        0
+                    ).toFixed(2)} kg</td>
                     <td>
-                        ${item.collection_id}
-                    </td>
-
-                    <td>
-                        ${item.collector_id}
-                    </td>
-
-                    <td>
-                        ${item.item_type}
-                    </td>
-
-                    <td>
-                        ${item.collector_weight}
-                        kg
-                    </td>
-
-                    <td>
-
-                        <span
-                            class="badge badge-orange"
-                        >
-                            ${item.status}
+                        <span class="badge ${badgeClass}">
+                            ${escapeHtml(status)}
                         </span>
-
+                        <div style="margin-top:7px;">
+                            ${action}
+                        </div>
                     </td>
-
                 </tr>
-
             `;
-
-        });
-
+        }).join("");
     }
 
+    /* =====================================================
+       AGGREGATOR VERIFY
+    ===================================================== */
+
+    async function verifyCollection(collectionId) {
+        const item = collections.find(
+            collection =>
+                collection.collection_id === collectionId
+        );
+
+        if (!item) {
+            showToast("❌ Collection not found.");
+            return;
+        }
+
+        const currentWeight = Number(
+            item.collector_weight ||
+            item.weight ||
+            0
+        );
+
+        const entered = prompt(
+            `Enter verified weight for ${collectionId} (kg):`,
+            currentWeight.toFixed(2)
+        );
+
+        if (entered === null) {
+            return;
+        }
+
+        const weight = Number(entered);
+
+        if (!Number.isFinite(weight) || weight <= 0) {
+            showToast("❌ Enter a valid weight.");
+            return;
+        }
+
+        try {
+            const data = await apiRequest(
+                `/api/collection/${encodeURIComponent(
+                    collectionId
+                )}/verify`,
+                {
+                    method: "POST",
+                    body: JSON.stringify({
+                        aggregator_weight: weight
+                    })
+                }
+            );
+
+            showToast(
+                "✅ Aggregator verified " +
+                data.collection.collection_id
+            );
+
+            await loadCollections();
+
+        } catch (error) {
+            console.error(error);
+            showToast("❌ " + error.message);
+        }
+    }
+
+    /* =====================================================
+       RECYCLER CONFIRMATION
+    ===================================================== */
+
+    async function confirmRecycler() {
+        const id =
+            document
+                .getElementById("recyclerCollectionId")
+                .value
+                .trim();
+
+        const weight =
+            Number(
+                document
+                    .getElementById("recyclerWeight")
+                    .value
+            );
+
+        if (!id) {
+            showToast("❌ Enter Collection ID.");
+            return;
+        }
+
+        if (!Number.isFinite(weight) || weight <= 0) {
+            showToast("❌ Enter a valid received weight.");
+            return;
+        }
+
+        try {
+            const data = await apiRequest(
+                `/api/collection/${encodeURIComponent(id)}/receive`,
+                {
+                    method: "POST",
+                    body: JSON.stringify({
+                        recycler_weight: weight
+                    })
+                }
+            );
+
+            showToast(
+                "🧾 EPR verification completed!"
+            );
+
+            document.getElementById(
+                "recyclerCollectionId"
+            ).value = "";
+
+            document.getElementById(
+                "recyclerWeight"
+            ).value = "";
+
+            await loadCollections();
+
+            updateRecyclerChain(data.collection);
+
+        } catch (error) {
+            console.error(error);
+            showToast("❌ " + error.message);
+        }
+    }
+
+    /* =====================================================
+       RECYCLER CHAIN VISUAL UPDATE
+    ===================================================== */
+
+    function updateRecyclerChain(item) {
+        const recyclerSection =
+            document.getElementById("recycler");
+
+        if (!recyclerSection) {
+            return;
+        }
+
+        const badges =
+            recyclerSection.querySelectorAll(".activity .badge");
+
+        if (badges.length >= 4) {
+            badges[0].textContent = "DONE";
+            badges[0].className = "badge badge-green";
+
+            if (item.aggregator_verified) {
+                badges[1].textContent = "DONE";
+                badges[1].className = "badge badge-green";
+            }
+
+            if (item.recycler_verified) {
+                badges[2].textContent = "DONE";
+                badges[2].className = "badge badge-green";
+            }
+
+            if (item.epr_verified) {
+                badges[3].textContent = "DONE";
+                badges[3].className = "badge badge-green";
+            }
+        }
+    }
+
+    /* =====================================================
+       BRAND DASHBOARD
+    ===================================================== */
+
+    async function loadBrandDashboard() {
+        try {
+            const data = await apiRequest("/api/dashboard");
+
+            const epr = data.epr || {};
+
+            const verified = Number(epr.verified_kg || 0);
+            const remaining = Number(epr.remaining_kg || 0);
+            const compliance = Number(
+                epr.compliance_percent || 0
+            );
+
+            document.getElementById("brandFulfillment").textContent =
+                verified.toFixed(2) + " kg";
+
+            document.getElementById("brandRemaining").textContent =
+                remaining.toFixed(2) + " kg";
+
+            document.getElementById("compliance").textContent =
+                compliance.toFixed(1) + "%";
+
+            document.getElementById("informalWeight").textContent =
+                verified.toFixed(2) + " kg";
+
+            document.getElementById("progressText").textContent =
+                compliance.toFixed(1) + "%";
+
+            document.getElementById("circleValue").textContent =
+                compliance.toFixed(1) + "%";
+
+            document.getElementById("progressBar").style.width =
+                compliance + "%";
+
+            document.getElementById("complianceCircle").style.background =
+                `conic-gradient(
+                    #22c55e ${compliance * 3.6}deg,
+                    #182231 0deg
+                )`;
+
+            if (Array.isArray(data.records)) {
+                collections = mergeCollections(
+                    collections,
+                    data.records
+                );
+            }
+
+            updateBrandTable();
+
+        } catch (error) {
+            console.error("Brand dashboard error:", error);
+            showToast("❌ Could not load brand dashboard.");
+        }
+    }
+
+    /* =====================================================
+       MERGE COLLECTION DATA
+    ===================================================== */
+
+    function mergeCollections(existing, incoming) {
+        const map = new Map();
+
+        [...existing, ...incoming].forEach(item => {
+            if (item && item.collection_id) {
+                map.set(item.collection_id, item);
+            }
+        });
+
+        return Array.from(map.values());
+    }
 
     /* =====================================================
        BRAND TABLE
     ===================================================== */
 
     function updateBrandTable() {
+        const table = document.getElementById("brandTable");
 
-        const table =
-            document
-                .getElementById(
-                    "brandTable"
-                );
-
-
-        const verified =
-            collections.filter(
-                item =>
-                    item.epr_verified
-            );
-
+        const verified = collections.filter(item =>
+            item.epr_verified ||
+            item.status === "EPR_VERIFIED"
+        );
 
         if (verified.length === 0) {
-
             table.innerHTML = `
                 <tr>
                     <td colspan="4"
@@ -3314,195 +3403,134 @@
                     </td>
                 </tr>
             `;
-
             return;
         }
 
-
-        table.innerHTML = "";
-
-
-        verified.forEach(item => {
-
-            table.innerHTML += `
-
-                <tr>
-
-                    <td>
-                        ${item.collection_id}
-                    </td>
-
-                    <td>
-                        Informal Channel
-                    </td>
-
-                    <td>
-                        ${item.recycler_weight}
-                        kg
-                    </td>
-
-                    <td>
-
-                        <span
-                            class="badge badge-green"
-                        >
-                            VERIFIED
-                        </span>
-
-                    </td>
-
-                </tr>
-
-            `;
-
-        });
-
+        table.innerHTML = verified.map(item => `
+            <tr>
+                <td>${escapeHtml(item.collection_id || "-")}</td>
+                <td>Informal Channel</td>
+                <td>${Number(
+                    item.recycler_weight || 0
+                ).toFixed(2)} kg</td>
+                <td>
+                    <span class="badge badge-green">
+                        VERIFIED
+                    </span>
+                </td>
+            </tr>
+        `).join("");
     }
-
 
     /* =====================================================
        ACTIVITY
     ===================================================== */
 
     function updateActivity() {
-
         const activity =
-            document
-                .getElementById(
-                    "activityList"
-                );
+            document.getElementById("activityList");
 
-
-        if (collections.length === 0) {
-
+        if (!activity) {
             return;
         }
 
+        if (collections.length === 0) {
+            activity.innerHTML = `
+                <div class="activity">
+                    <div class="activity-icon">📦</div>
+                    <div class="activity-text">
+                        <strong>No collections yet</strong>
+                        <p>Your activity will appear here.</p>
+                    </div>
+                </div>
+            `;
+            return;
+        }
 
-        activity.innerHTML = "";
-
-
-        collections
+        activity.innerHTML = collections
             .slice()
             .reverse()
             .slice(0, 4)
-            .forEach(item => {
+            .map(item => {
+                const status =
+                    item.status || "COLLECTED";
 
-                activity.innerHTML += `
-
+                return `
                     <div class="activity">
-
-                        <div class="activity-icon">
-                            📦
-                        </div>
+                        <div class="activity-icon">📦</div>
 
                         <div class="activity-text">
-
                             <strong>
-                                ${item.item_type}
+                                ${escapeHtml(
+                                    item.item_type || "E-waste"
+                                )}
                                 collected
                             </strong>
 
                             <p>
-                                ${item.collector_weight}
+                                ${Number(
+                                    item.collector_weight ||
+                                    item.weight ||
+                                    0
+                                ).toFixed(2)}
                                 kg ·
-                                ${item.collection_id}
+                                ${escapeHtml(
+                                    item.collection_id || "-"
+                                )}
                             </p>
-
                         </div>
 
-                        <span class="badge badge-green">
-                            LOGGED
+                        <span class="badge ${
+                            status === "EPR_VERIFIED"
+                                ? "badge-green"
+                                : "badge-orange"
+                        }">
+                            ${escapeHtml(status)}
                         </span>
-
                     </div>
-
                 `;
-
-            });
-
+            })
+            .join("");
     }
-
 
     /* =====================================================
-       RECYCLER CONFIRMATION
+       HTML SAFETY HELPERS
     ===================================================== */
 
-    function confirmRecycler() {
-
-        const id =
-            document
-                .getElementById(
-                    "recyclerCollectionId"
-                )
-                .value
-                .trim();
-
-
-        const weight =
-            Number(
-                document
-                    .getElementById(
-                        "recyclerWeight"
-                    )
-                    .value
-            );
-
-
-        const collection =
-            collections.find(
-                item =>
-                    item.collection_id === id
-            );
-
-
-        if (!collection) {
-
-            showToast(
-                "❌ Collection ID not found."
-            );
-
-            return;
-        }
-
-
-        if (!weight || weight <= 0) {
-
-            showToast(
-                "❌ Enter a valid received weight."
-            );
-
-            return;
-        }
-
-
-        collection.recycler_weight =
-            weight;
-
-
-        collection.epr_verified =
-            true;
-
-
-        collection.status =
-            "EPR_VERIFIED";
-
-
-        collection.reward_points =
-            Math.floor(
-                weight * 10
-            );
-
-
-        updateDashboards();
-
-
-        showToast(
-            "🧾 EPR verification completed!"
-        );
-
+    function escapeHtml(value) {
+        return String(value)
+            .replaceAll("&", "&amp;")
+            .replaceAll("<", "&lt;")
+            .replaceAll(">", "&gt;")
+            .replaceAll('"', "&quot;")
+            .replaceAll("'", "&#039;");
     }
 
+    function escapeJs(value) {
+        return String(value)
+            .replaceAll("\", "\\")
+            .replaceAll("'", "\'");
+    }
+
+    /* =====================================================
+       INITIAL LOAD
+    ===================================================== */
+
+    async function initializeApp() {
+        updateConnection();
+
+        try {
+            await apiRequest("/health");
+            await loadCollections();
+        } catch (error) {
+            console.error("Startup error:", error);
+            showToast(
+                "⚠️ Backend is not reachable. Start Flask first."
+            );
+        }
+    }
+
+    initializeApp();
 </script>
 
 
