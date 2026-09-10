@@ -1,1071 +1,2443 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<meta name="viewport"
+      content="width=device-width, initial-scale=1.0">
+
 <title>E-Waste EPR Platform</title>
 
 <style>
-*{
-    box-sizing:border-box;
-    margin:0;
-    padding:0;
-    font-family:Arial,Helvetica,sans-serif;
+
+/* =========================================================
+   GLOBAL
+========================================================= */
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
 }
 
-body{
-    background:#08110d;
-    color:#eafff1;
-    min-height:100vh;
+body {
+
+    font-family:
+        Inter,
+        system-ui,
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        sans-serif;
+
+    background:
+        radial-gradient(
+            circle at 20% 20%,
+            rgba(0,255,170,0.08),
+            transparent 30%
+        ),
+        radial-gradient(
+            circle at 80% 70%,
+            rgba(0,140,255,0.08),
+            transparent 30%
+        ),
+        #05080b;
+
+    color: #f4f7f8;
+
+    min-height: 100vh;
+
+    overflow-x: hidden;
 }
 
-button,input,select{
-    font:inherit;
+
+/* =========================================================
+   ANIMATED BACKGROUND
+========================================================= */
+
+.background {
+
+    position: fixed;
+
+    inset: 0;
+
+    z-index: -2;
+
+    overflow: hidden;
+
+    background:
+        linear-gradient(
+            rgba(5,8,11,0.88),
+            rgba(5,8,11,0.96)
+        );
 }
 
-button{
-    cursor:pointer;
+.grid {
+
+    position: absolute;
+
+    inset: -50%;
+
+    background-image:
+        linear-gradient(
+            rgba(0,255,170,0.035) 1px,
+            transparent 1px
+        ),
+        linear-gradient(
+            90deg,
+            rgba(0,255,170,0.035) 1px,
+            transparent 1px
+        );
+
+    background-size: 55px 55px;
+
+    transform:
+        perspective(500px)
+        rotateX(60deg);
+
+    animation:
+        gridMove 18s linear infinite;
 }
 
-.app{
-    display:flex;
-    min-height:100vh;
-}
+@keyframes gridMove {
 
-/* SIDEBAR */
-
-.sidebar{
-    width:250px;
-    background:#0d1b15;
-    border-right:1px solid #1d382b;
-    padding:22px 15px;
-    position:fixed;
-    top:0;
-    bottom:0;
-    left:0;
-}
-
-.logo{
-    font-size:21px;
-    font-weight:800;
-    margin-bottom:30px;
-    padding:10px;
-}
-
-.logo span{
-    color:#55e39a;
-}
-
-.nav-title{
-    font-size:11px;
-    color:#789485;
-    margin:20px 10px 8px;
-    text-transform:uppercase;
-    letter-spacing:1px;
-}
-
-.nav-btn{
-    width:100%;
-    padding:13px;
-    border:none;
-    border-radius:10px;
-    background:transparent;
-    color:#aac2b4;
-    text-align:left;
-    margin-bottom:5px;
-}
-
-.nav-btn:hover,
-.nav-btn.active{
-    background:#163326;
-    color:#65eea5;
-}
-
-/* MAIN */
-
-.main{
-    margin-left:250px;
-    width:calc(100% - 250px);
-    padding:25px;
-}
-
-.topbar{
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-    margin-bottom:25px;
-}
-
-.topbar h1{
-    font-size:28px;
-}
-
-.network{
-    padding:8px 14px;
-    border-radius:20px;
-    background:#153426;
-    color:#65eea5;
-    font-size:13px;
-}
-
-.network.offline{
-    background:#3a2814;
-    color:#ffbd62;
-}
-
-/* PAGES */
-
-.page{
-    display:none;
-}
-
-.page.active{
-    display:block;
-}
-
-/* CARDS */
-
-.grid{
-    display:grid;
-    grid-template-columns:repeat(4,1fr);
-    gap:16px;
-    margin-bottom:20px;
-}
-
-.card{
-    background:#0e1e16;
-    border:1px solid #1d382b;
-    border-radius:15px;
-    padding:20px;
-}
-
-.card-label{
-    color:#789485;
-    font-size:13px;
-    margin-bottom:10px;
-}
-
-.card-value{
-    font-size:28px;
-    font-weight:800;
-}
-
-.card-small{
-    margin-top:7px;
-    color:#65eea5;
-    font-size:12px;
-}
-
-/* FORMS */
-
-.panel{
-    background:#0e1e16;
-    border:1px solid #1d382b;
-    border-radius:15px;
-    padding:22px;
-    margin-bottom:20px;
-}
-
-.panel h2{
-    margin-bottom:18px;
-    font-size:19px;
-}
-
-.form-grid{
-    display:grid;
-    grid-template-columns:repeat(2,1fr);
-    gap:15px;
-}
-
-.field{
-    display:flex;
-    flex-direction:column;
-    gap:7px;
-}
-
-.field label{
-    color:#91a99b;
-    font-size:13px;
-}
-
-.field input,
-.field select{
-    background:#09150f;
-    border:1px solid #274936;
-    color:white;
-    border-radius:9px;
-    padding:12px;
-    outline:none;
-}
-
-.field input:focus,
-.field select:focus{
-    border-color:#55e39a;
-}
-
-.full{
-    grid-column:1/-1;
-}
-
-.btn{
-    border:none;
-    border-radius:9px;
-    padding:12px 18px;
-    font-weight:700;
-}
-
-.btn-primary{
-    background:#55e39a;
-    color:#06120c;
-}
-
-.btn-primary:hover{
-    background:#75f3b1;
-}
-
-.btn-secondary{
-    background:#183426;
-    color:#8ff2bb;
-}
-
-.btn-danger{
-    background:#42201d;
-    color:#ff9b8e;
-}
-
-.actions{
-    display:flex;
-    gap:10px;
-    flex-wrap:wrap;
-    margin-top:18px;
-}
-
-/* TABLE */
-
-.table-wrap{
-    overflow-x:auto;
-}
-
-table{
-    width:100%;
-    border-collapse:collapse;
-}
-
-th{
-    color:#789485;
-    font-size:12px;
-    text-align:left;
-    padding:12px;
-    border-bottom:1px solid #203a2d;
-}
-
-td{
-    padding:13px 12px;
-    border-bottom:1px solid #162a21;
-    font-size:13px;
-}
-
-.status{
-    display:inline-block;
-    padding:5px 9px;
-    border-radius:15px;
-    font-size:11px;
-    font-weight:700;
-}
-
-.status.submitted{
-    background:#27372d;
-    color:#c6d5ca;
-}
-
-.status.verified{
-    background:#123b28;
-    color:#66efa4;
-}
-
-.status.flagged{
-    background:#44261f;
-    color:#ff9c88;
-}
-
-.status.pending{
-    background:#403416;
-    color:#ffd06e;
-}
-
-/* HERO */
-
-.hero{
-    background:linear-gradient(135deg,#0d2519,#102d1f);
-    border:1px solid #24533b;
-    border-radius:18px;
-    padding:30px;
-    margin-bottom:20px;
-}
-
-.hero h2{
-    font-size:30px;
-    margin-bottom:8px;
-}
-
-.hero p{
-    color:#91a99b;
-    max-width:750px;
-    line-height:1.6;
-}
-
-/* PROGRESS */
-
-.progress{
-    height:10px;
-    background:#162a21;
-    border-radius:20px;
-    overflow:hidden;
-    margin-top:12px;
-}
-
-.progress-bar{
-    height:100%;
-    background:#55e39a;
-    width:0%;
-}
-
-/* TOAST */
-
-#toast{
-    position:fixed;
-    right:25px;
-    bottom:25px;
-    background:#14281d;
-    border:1px solid #315a43;
-    padding:14px 18px;
-    border-radius:10px;
-    display:none;
-    z-index:9999;
-    max-width:350px;
-}
-
-#toast.show{
-    display:block;
-}
-
-/* MOBILE */
-
-@media(max-width:900px){
-    .sidebar{
-        width:190px;
+    from {
+        transform:
+            perspective(500px)
+            rotateX(60deg)
+            translateY(0);
     }
 
-    .main{
-        margin-left:190px;
-        width:calc(100% - 190px);
-    }
-
-    .grid{
-        grid-template-columns:repeat(2,1fr);
+    to {
+        transform:
+            perspective(500px)
+            rotateX(60deg)
+            translateY(55px);
     }
 }
 
-@media(max-width:650px){
-    .sidebar{
-        position:relative;
-        width:100%;
-        height:auto;
-        border-right:none;
-        border-bottom:1px solid #1d382b;
+
+.glow {
+
+    position: absolute;
+
+    width: 500px;
+    height: 500px;
+
+    border-radius: 50%;
+
+    filter: blur(100px);
+
+    opacity: 0.12;
+
+    animation: floatGlow 12s ease-in-out infinite;
+}
+
+.glow.one {
+
+    background: #00ffaa;
+
+    top: -200px;
+    left: -150px;
+}
+
+.glow.two {
+
+    background: #0077ff;
+
+    right: -200px;
+    bottom: -200px;
+
+    animation-delay: -6s;
+}
+
+@keyframes floatGlow {
+
+    0%,100% {
+        transform: translate(0,0);
     }
 
-    .app{
-        display:block;
-    }
-
-    .main{
-        margin-left:0;
-        width:100%;
-    }
-
-    .form-grid{
-        grid-template-columns:1fr;
-    }
-
-    .grid{
-        grid-template-columns:1fr;
-    }
-
-    .full{
-        grid-column:auto;
+    50% {
+        transform: translate(70px,40px);
     }
 }
+
+
+/* =========================================================
+   PARTICLES
+========================================================= */
+
+.particles {
+
+    position: absolute;
+
+    inset: 0;
+
+    pointer-events: none;
+}
+
+.particle {
+
+    position: absolute;
+
+    width: 3px;
+    height: 3px;
+
+    background: #7affd0;
+
+    border-radius: 50%;
+
+    opacity: 0.5;
+
+    animation:
+        particleFloat
+        linear
+        infinite;
+}
+
+@keyframes particleFloat {
+
+    from {
+        transform:
+            translateY(100vh)
+            translateX(0);
+        opacity: 0;
+    }
+
+    20% {
+        opacity: 0.5;
+    }
+
+    80% {
+        opacity: 0.5;
+    }
+
+    to {
+        transform:
+            translateY(-20vh)
+            translateX(80px);
+        opacity: 0;
+    }
+}
+
+
+/* =========================================================
+   COMMON
+========================================================= */
+
+.hidden {
+    display: none !important;
+}
+
+.container {
+
+    width: min(1180px, 92%);
+
+    margin: auto;
+}
+
+.screen {
+
+    min-height: 100vh;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    padding: 40px 0;
+}
+
+
+/* =========================================================
+   LANGUAGE SCREEN
+========================================================= */
+
+.language-screen {
+
+    text-align: center;
+}
+
+.logo {
+
+    font-size: 18px;
+
+    font-weight: 800;
+
+    letter-spacing: 3px;
+
+    color: #00ffaa;
+
+    margin-bottom: 22px;
+}
+
+.hero-title {
+
+    font-size:
+        clamp(38px, 7vw, 72px);
+
+    line-height: 1;
+
+    font-weight: 900;
+
+    margin-bottom: 18px;
+}
+
+.hero-title span {
+
+    color: #00ffaa;
+
+    text-shadow:
+        0 0 30px
+        rgba(0,255,170,0.25);
+}
+
+.hero-subtitle {
+
+    color: #9ba8ad;
+
+    font-size: 16px;
+
+    margin-bottom: 45px;
+}
+
+.section-title {
+
+    font-size: 25px;
+
+    margin-bottom: 25px;
+}
+
+
+/* =========================================================
+   LANGUAGE CARDS
+========================================================= */
+
+.language-grid {
+
+    display: grid;
+
+    grid-template-columns:
+        repeat(4, 1fr);
+
+    gap: 15px;
+
+    max-width: 900px;
+
+    margin: auto;
+}
+
+.language-card {
+
+    background:
+        rgba(12,20,24,0.78);
+
+    border:
+        1px solid
+        rgba(255,255,255,0.08);
+
+    border-radius: 18px;
+
+    padding: 25px 15px;
+
+    cursor: pointer;
+
+    transition:
+        0.25s ease;
+
+    backdrop-filter: blur(15px);
+}
+
+.language-card:hover {
+
+    transform:
+        translateY(-6px);
+
+    border-color:
+        rgba(0,255,170,0.6);
+
+    box-shadow:
+        0 10px 35px
+        rgba(0,255,170,0.12);
+}
+
+.language-card.selected {
+
+    border-color: #00ffaa;
+
+    background:
+        rgba(0,255,170,0.09);
+
+    box-shadow:
+        0 0 30px
+        rgba(0,255,170,0.16);
+}
+
+.language-flag {
+
+    font-size: 28px;
+
+    margin-bottom: 10px;
+}
+
+.language-name {
+
+    font-weight: 800;
+
+    font-size: 17px;
+}
+
+.language-native {
+
+    color: #849298;
+
+    font-size: 13px;
+
+    margin-top: 4px;
+}
+
+.continue-btn {
+
+    margin-top: 30px;
+
+    border: none;
+
+    border-radius: 12px;
+
+    padding: 14px 30px;
+
+    background: #00ffaa;
+
+    color: #03100b;
+
+    font-weight: 900;
+
+    cursor: pointer;
+
+    font-size: 15px;
+
+    transition: 0.2s;
+}
+
+.continue-btn:hover {
+
+    transform: translateY(-2px);
+
+    box-shadow:
+        0 0 25px
+        rgba(0,255,170,0.3);
+}
+
+
+/* =========================================================
+   ROLE SCREEN
+========================================================= */
+
+.role-header {
+
+    text-align: center;
+
+    margin-bottom: 45px;
+}
+
+.role-grid {
+
+    display: grid;
+
+    grid-template-columns:
+        repeat(4, 1fr);
+
+    gap: 20px;
+}
+
+.role-card {
+
+    background:
+        rgba(11,18,22,0.82);
+
+    border:
+        1px solid
+        rgba(255,255,255,0.08);
+
+    border-radius: 22px;
+
+    padding: 38px 20px;
+
+    text-align: center;
+
+    cursor: pointer;
+
+    transition:
+        0.25s ease;
+
+    backdrop-filter: blur(15px);
+}
+
+.role-card:hover {
+
+    transform:
+        translateY(-8px);
+
+    border-color:
+        rgba(0,255,170,0.55);
+
+    box-shadow:
+        0 15px 40px
+        rgba(0,255,170,0.1);
+}
+
+.role-icon {
+
+    font-size: 45px;
+
+    margin-bottom: 18px;
+}
+
+.role-card h3 {
+
+    margin-bottom: 8px;
+}
+
+.role-card p {
+
+    color: #879399;
+
+    font-size: 13px;
+
+    line-height: 1.5;
+}
+
+
+/* Customer card centered */
+.customer-role {
+
+    grid-column:
+        2 / span 2;
+}
+
+
+/* =========================================================
+   DASHBOARD
+========================================================= */
+
+.dashboard {
+
+    display: none;
+
+    min-height: 100vh;
+
+    padding: 30px 0 60px;
+}
+
+.topbar {
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    margin-bottom: 30px;
+
+    gap: 15px;
+}
+
+.brand {
+
+    font-size: 21px;
+
+    font-weight: 900;
+
+    color: #00ffaa;
+}
+
+.role-badge {
+
+    border:
+        1px solid
+        rgba(0,255,170,0.3);
+
+    background:
+        rgba(0,255,170,0.07);
+
+    padding:
+        8px 13px;
+
+    border-radius: 20px;
+
+    font-size: 12px;
+}
+
+.back-btn {
+
+    background:
+        rgba(255,255,255,0.06);
+
+    border:
+        1px solid
+        rgba(255,255,255,0.1);
+
+    color: white;
+
+    padding: 9px 15px;
+
+    border-radius: 10px;
+
+    cursor: pointer;
+}
+
+
+/* =========================================================
+   DASHBOARD CARDS
+========================================================= */
+
+.card-grid {
+
+    display: grid;
+
+    grid-template-columns:
+        repeat(4, 1fr);
+
+    gap: 15px;
+
+    margin-bottom: 20px;
+}
+
+.card {
+
+    background:
+        rgba(12,20,24,0.78);
+
+    border:
+        1px solid
+        rgba(255,255,255,0.07);
+
+    border-radius: 18px;
+
+    padding: 22px;
+
+    backdrop-filter: blur(12px);
+}
+
+.card-title {
+
+    color: #8b999e;
+
+    font-size: 13px;
+
+    margin-bottom: 12px;
+}
+
+.big-number {
+
+    font-size: 30px;
+
+    font-weight: 900;
+}
+
+.green {
+
+    color: #00ffaa;
+}
+
+.blue {
+
+    color: #5eb7ff;
+}
+
+.yellow {
+
+    color: #ffd166;
+}
+
+.red {
+
+    color: #ff6b6b;
+}
+
+
+/* =========================================================
+   CONTENT GRID
+========================================================= */
+
+.content-grid {
+
+    display: grid;
+
+    grid-template-columns:
+        1fr 1fr;
+
+    gap: 20px;
+
+    margin-top: 20px;
+}
+
+.form-card {
+
+    background:
+        rgba(12,20,24,0.82);
+
+    border:
+        1px solid
+        rgba(255,255,255,0.07);
+
+    border-radius: 18px;
+
+    padding: 25px;
+}
+
+.form-card h2 {
+
+    font-size: 18px;
+
+    margin-bottom: 20px;
+}
+
+label {
+
+    display: block;
+
+    color: #9aa6aa;
+
+    font-size: 12px;
+
+    margin:
+        14px 0 7px;
+}
+
+input,
+select {
+
+    width: 100%;
+
+    background:
+        rgba(255,255,255,0.045);
+
+    border:
+        1px solid
+        rgba(255,255,255,0.09);
+
+    color: white;
+
+    padding: 12px;
+
+    border-radius: 10px;
+
+    outline: none;
+}
+
+input:focus,
+select:focus {
+
+    border-color: #00ffaa;
+}
+
+option {
+
+    background: #10181c;
+
+    color: white;
+}
+
+.primary-btn {
+
+    width: 100%;
+
+    margin-top: 20px;
+
+    border: none;
+
+    background: #00ffaa;
+
+    color: #03100b;
+
+    padding: 13px;
+
+    border-radius: 10px;
+
+    font-weight: 900;
+
+    cursor: pointer;
+}
+
+.voice-btn {
+
+    background:
+        rgba(0,255,170,0.1);
+
+    border:
+        1px solid
+        rgba(0,255,170,0.35);
+
+    color: #00ffaa;
+
+    padding: 10px 15px;
+
+    border-radius: 10px;
+
+    cursor: pointer;
+
+    margin-top: 10px;
+}
+
+
+/* =========================================================
+   TABLE
+========================================================= */
+
+.table-wrap {
+
+    overflow-x: auto;
+}
+
+table {
+
+    width: 100%;
+
+    border-collapse: collapse;
+
+    font-size: 13px;
+}
+
+th,
+td {
+
+    padding: 13px 10px;
+
+    border-bottom:
+        1px solid
+        rgba(255,255,255,0.06);
+
+    text-align: left;
+}
+
+th {
+
+    color: #7f8d92;
+
+    font-weight: 600;
+}
+
+.status {
+
+    display: inline-block;
+
+    padding:
+        5px 9px;
+
+    border-radius: 20px;
+
+    font-size: 11px;
+
+    font-weight: 800;
+}
+
+.status.green-bg {
+
+    background:
+        rgba(0,255,170,0.1);
+
+    color: #00ffaa;
+}
+
+.status.yellow-bg {
+
+    background:
+        rgba(255,209,102,0.1);
+
+    color: #ffd166;
+}
+
+.status.red-bg {
+
+    background:
+        rgba(255,107,107,0.1);
+
+    color: #ff6b6b;
+}
+
+
+/* =========================================================
+   PROGRESS
+========================================================= */
+
+.progress {
+
+    width: 100%;
+
+    height: 12px;
+
+    background:
+        rgba(255,255,255,0.07);
+
+    border-radius: 20px;
+
+    overflow: hidden;
+
+    margin: 15px 0;
+}
+
+.progress-bar {
+
+    height: 100%;
+
+    width: 0%;
+
+    background: #00ffaa;
+
+    border-radius: inherit;
+
+    transition:
+        width 0.7s ease;
+}
+
+
+/* =========================================================
+   REWARD
+========================================================= */
+
+.reward-box {
+
+    text-align: center;
+
+    padding: 25px;
+
+    background:
+        linear-gradient(
+            135deg,
+            rgba(0,255,170,0.08),
+            rgba(0,100,255,0.06)
+        );
+
+    border:
+        1px solid
+        rgba(0,255,170,0.15);
+
+    border-radius: 18px;
+}
+
+.reward-number {
+
+    font-size: 42px;
+
+    font-weight: 900;
+
+    color: #00ffaa;
+
+    margin: 10px 0;
+}
+
+.redeem-btn {
+
+    border: none;
+
+    background: #00ffaa;
+
+    color: #03100b;
+
+    padding:
+        11px 20px;
+
+    border-radius: 10px;
+
+    font-weight: 800;
+
+    cursor: pointer;
+}
+
+
+/* =========================================================
+   VOICE
+========================================================= */
+
+.voice-status {
+
+    font-size: 12px;
+
+    color: #849298;
+
+    margin-top: 8px;
+}
+
+
+/* =========================================================
+   MOBILE
+========================================================= */
+
+@media(max-width: 900px) {
+
+    .language-grid {
+
+        grid-template-columns:
+            repeat(2, 1fr);
+    }
+
+    .role-grid {
+
+        grid-template-columns:
+            repeat(2, 1fr);
+    }
+
+    .customer-role {
+
+        grid-column:
+            auto;
+    }
+
+    .card-grid {
+
+        grid-template-columns:
+            repeat(2, 1fr);
+    }
+
+    .content-grid {
+
+        grid-template-columns:
+            1fr;
+    }
+}
+
+@media(max-width: 600px) {
+
+    .hero-title {
+
+        font-size: 42px;
+    }
+
+    .language-grid {
+
+        grid-template-columns:
+            1fr 1fr;
+    }
+
+    .role-grid {
+
+        grid-template-columns:
+            1fr;
+    }
+
+    .card-grid {
+
+        grid-template-columns:
+            1fr;
+    }
+
+    .topbar {
+
+        flex-wrap: wrap;
+    }
+}
+
 </style>
+
 </head>
 
 <body>
 
-<div class="app">
 
-<!-- SIDEBAR -->
+<!-- ======================================================
+     ANIMATED BACKGROUND
+====================================================== -->
 
-<aside class="sidebar">
+<div class="background">
 
-    <div class="logo">
-        ♻️ E-Waste <span>EPR</span>
+    <div class="grid"></div>
+
+    <div class="glow one"></div>
+    <div class="glow two"></div>
+
+    <div class="particles" id="particles"></div>
+
+</div>
+
+
+<!-- ======================================================
+     SCREEN 1 — LANGUAGE
+====================================================== -->
+
+<section
+    id="languageScreen"
+    class="screen language-screen">
+
+    <div class="container">
+
+        <div class="logo">
+            ♻ E-WASTE EPR
+        </div>
+
+        <h1 class="hero-title">
+            Responsible <span>E-Waste</span>
+        </h1>
+
+        <p class="hero-subtitle">
+            A multilingual digital bridge between
+            citizens, collectors, recyclers and brands.
+        </p>
+
+        <h2 class="section-title">
+            🌐 Choose your preferred language
+        </h2>
+
+        <div
+            class="language-grid"
+            id="languageGrid">
+        </div>
+
+        <button
+            class="continue-btn"
+            onclick="continueLanguage()">
+
+            Continue →
+
+        </button>
+
     </div>
-
-    <div class="nav-title">Platform</div>
-
-    <button class="nav-btn active" onclick="showPage('collector',this)">
-        📱 Collector
-    </button>
-
-    <button class="nav-btn" onclick="showPage('aggregator',this)">
-        📦 Aggregator
-    </button>
-
-    <button class="nav-btn" onclick="showPage('recycler',this)">
-        ♻️ Recycler
-    </button>
-
-    <button class="nav-btn" onclick="showPage('brand',this)">
-        🏢 Brand / PRO
-    </button>
-
-    <div class="nav-title">System</div>
-
-    <button class="nav-btn" onclick="refreshAll()">
-        🔄 Refresh Data
-    </button>
-
-</aside>
-
-
-<!-- MAIN -->
-
-<main class="main">
-
-<div class="topbar">
-
-    <h1 id="pageTitle">Collector Dashboard</h1>
-
-    <div id="network" class="network">
-        🟢 Online
-    </div>
-
-</div>
-
-
-<!-- ================= COLLECTOR ================= -->
-
-<section id="collector" class="page active">
-
-<div class="hero">
-
-    <h2>Collect. Verify. Reward. ♻️</h2>
-
-    <p>
-        Offline-first digital platform connecting informal e-waste
-        collectors with aggregators, recyclers and the formal EPR
-        compliance ecosystem.
-    </p>
-
-</div>
-
-
-<div class="grid">
-
-    <div class="card">
-        <div class="card-label">Total Collections</div>
-        <div class="card-value" id="collectorCollections">0</div>
-        <div class="card-small">Recorded items</div>
-    </div>
-
-    <div class="card">
-        <div class="card-label">Verified Collections</div>
-        <div class="card-value" id="verifiedCollections">0</div>
-        <div class="card-small">Completed chain</div>
-    </div>
-
-    <div class="card">
-        <div class="card-label">Reward Points</div>
-        <div class="card-value" id="collectorPoints">0</div>
-        <div class="card-small">UPI redemption ready</div>
-    </div>
-
-    <div class="card">
-        <div class="card-label">Offline Queue</div>
-        <div class="card-value" id="offlineCount">0</div>
-        <div class="card-small">Waiting for sync</div>
-    </div>
-
-</div>
-
-
-<div class="panel">
-
-<h2>📋 Record E-Waste Collection</h2>
-
-<form id="collectionForm">
-
-<div class="form-grid">
-
-<div class="field">
-<label>Collector ID</label>
-<input id="collectorId" required placeholder="COL-001">
-</div>
-
-
-<div class="field">
-<label>Item Type</label>
-
-<select id="itemType" required>
-
-<option value="">Select item</option>
-<option value="Mobile Phone">Mobile Phone</option>
-<option value="Laptop">Laptop</option>
-<option value="Desktop">Desktop</option>
-<option value="Television">Television</option>
-<option value="Refrigerator">Refrigerator</option>
-<option value="Washing Machine">Washing Machine</option>
-<option value="PCB">PCB</option>
-<option value="Battery">Battery</option>
-<option value="Other E-Waste">Other E-Waste</option>
-
-</select>
-
-</div>
-
-
-<div class="field">
-<label>Quantity</label>
-<input id="quantity" type="number" min="1" required placeholder="5">
-</div>
-
-
-<div class="field">
-<label>Weight (kg)</label>
-<input id="weight" type="number" min="0.1" step="0.1" required placeholder="12.5">
-</div>
-
-
-<div class="field full">
-<label>Photo Verification</label>
-<input id="photo" type="file" accept="image/*">
-</div>
-
-</div>
-
-
-<div class="actions">
-
-<button type="button" class="btn btn-secondary" onclick="getGPS()">
-📍 Capture GPS
-</button>
-
-<button type="button" class="btn btn-secondary" onclick="startVoice()">
-🎙️ Voice Input
-</button>
-
-<button type="submit" class="btn btn-primary">
-➕ Submit Collection
-</button>
-
-</div>
-
-<p id="gpsStatus" style="margin-top:12px;color:#789485;font-size:12px;">
-GPS not captured
-</p>
-
-</form>
-
-</div>
-
-
-<div class="panel">
-
-<h2>📜 Collection History</h2>
-
-<div class="table-wrap">
-
-<table>
-
-<thead>
-<tr>
-<th>ID</th>
-<th>Item</th>
-<th>Weight</th>
-<th>Status</th>
-<th>Reward</th>
-</tr>
-</thead>
-
-<tbody id="collectionTable">
-<tr>
-<td colspan="5">Loading...</td>
-</tr>
-</tbody>
-
-</table>
-
-</div>
-
-</div>
 
 </section>
 
 
-<!-- ================= AGGREGATOR ================= -->
+<!-- ======================================================
+     SCREEN 2 — ROLE
+====================================================== -->
 
-<section id="aggregator" class="page">
+<section
+    id="roleScreen"
+    class="screen hidden">
 
-<div class="hero">
+    <div class="container">
 
-<h2>📦 Aggregator Dashboard</h2>
+        <div class="role-header">
 
-<p>
-Verify collector submissions, confirm physical weight and prepare
-material for formal recycling.
-</p>
+            <div class="logo">
+                ♻ E-WASTE EPR
+            </div>
 
-</div>
+            <h1 class="hero-title"
+                style="font-size:48px">
 
+                <span id="roleTitle">
+                    Who are you?
+                </span>
 
-<div class="grid">
+            </h1>
 
-<div class="card">
-<div class="card-label">Total Collections</div>
-<div class="card-value" id="aggTotal">0</div>
-</div>
+            <p class="hero-subtitle">
+                Select your role to continue
+            </p>
 
-<div class="card">
-<div class="card-label">Pending</div>
-<div class="card-value" id="aggPending">0</div>
-</div>
-
-<div class="card">
-<div class="card-label">Verified Weight</div>
-<div class="card-value" id="aggWeight">0 kg</div>
-</div>
-
-<div class="card">
-<div class="card-label">Flagged</div>
-<div class="card-value" id="aggFlagged">0</div>
-</div>
-
-</div>
+        </div>
 
 
-<div class="panel">
+        <div class="role-grid">
 
-<h2>🔎 Pickup Verification</h2>
+            <div
+                class="role-card"
+                onclick="openDashboard('collector')">
 
-<div class="table-wrap">
+                <div class="role-icon">
+                    👤
+                </div>
 
-<table>
+                <h3>Collector</h3>
 
-<thead>
-<tr>
-<th>Collection</th>
-<th>Collector</th>
-<th>Item</th>
-<th>Collector Weight</th>
-<th>Verify</th>
-</tr>
-</thead>
+                <p>
+                    Collect and register
+                    e-waste from customers.
+                </p>
 
-<tbody id="aggregatorTable"></tbody>
+            </div>
 
-</table>
 
-</div>
+            <div
+                class="role-card"
+                onclick="openDashboard('aggregator')">
 
-</div>
+                <div class="role-icon">
+                    🏢
+                </div>
+
+                <h3>Aggregator</h3>
+
+                <p>
+                    Verify pickups,
+                    weights and collection records.
+                </p>
+
+            </div>
+
+
+            <div
+                class="role-card"
+                onclick="openDashboard('recycler')">
+
+                <div class="role-icon">
+                    ♻️
+                </div>
+
+                <h3>Recycler</h3>
+
+                <p>
+                    Confirm receipt and
+                    recycling of e-waste.
+                </p>
+
+            </div>
+
+
+            <div
+                class="role-card"
+                onclick="openDashboard('brand')">
+
+                <div class="role-icon">
+                    🏭
+                </div>
+
+                <h3>Brand / PRO</h3>
+
+                <p>
+                    Track EPR obligations,
+                    fulfillment and compliance.
+                </p>
+
+            </div>
+
+
+            <div
+                class="role-card customer-role"
+                onclick="openDashboard('customer')">
+
+                <div class="role-icon">
+                    👨‍💼
+                </div>
+
+                <h3>Customer</h3>
+
+                <p>
+                    Responsibly hand over
+                    e-waste and earn reward points.
+                </p>
+
+            </div>
+
+        </div>
+
+    </div>
 
 </section>
 
 
-<!-- ================= RECYCLER ================= -->
+<!-- ======================================================
+     DASHBOARD
+====================================================== -->
 
-<section id="recycler" class="page">
+<section
+    id="dashboard"
+    class="dashboard">
 
-<div class="hero">
+    <div class="container">
 
-<h2>♻️ Recycler Portal</h2>
+        <div class="topbar">
 
-<p>
-Confirm receipt of material. EPR credit is generated only after
-the complete verification chain is completed.
-</p>
+            <div class="brand">
+                ♻ E-WASTE EPR
+            </div>
 
-</div>
+            <div id="currentRole"
+                 class="role-badge">
+                Dashboard
+            </div>
+
+            <button
+                class="back-btn"
+                onclick="backToRoles()">
+
+                ← Roles
+
+            </button>
+
+        </div>
 
 
-<div class="panel">
+        <!-- ==================================================
+             COLLECTOR DASHBOARD
+        ================================================== -->
 
-<h2>Material Receipt</h2>
+        <div
+            id="collectorDashboard"
+            class="role-dashboard hidden">
 
-<div class="table-wrap">
+            <h1>Collector Dashboard</h1>
 
-<table>
+            <p class="hero-subtitle">
+                Register verified e-waste collections.
+            </p>
 
-<thead>
 
-<tr>
-<th>Collection</th>
-<th>Item</th>
-<th>Aggregator Weight</th>
-<th>Receipt Weight</th>
-<th>Action</th>
-</tr>
+            <div class="card-grid">
 
-</thead>
+                <div class="card">
 
-<tbody id="recyclerTable"></tbody>
+                    <div class="card-title">
+                        My Collections
+                    </div>
 
-</table>
+                    <div
+                        id="collectorCount"
+                        class="big-number green">
+                        0
+                    </div>
 
-</div>
+                </div>
 
-</div>
+
+                <div class="card">
+
+                    <div class="card-title">
+                        Reward Points
+                    </div>
+
+                    <div
+                        id="collectorPoints"
+                        class="big-number">
+                        0
+                    </div>
+
+                </div>
+
+
+                <div class="card">
+
+                    <div class="card-title">
+                        Verified Collections
+                    </div>
+
+                    <div
+                        id="collectorVerified"
+                        class="big-number blue">
+                        0
+                    </div>
+
+                </div>
+
+
+                <div class="card">
+
+                    <div class="card-title">
+                        Network
+                    </div>
+
+                    <div class="big-number green">
+                        ONLINE
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <div class="content-grid">
+
+                <div class="form-card">
+
+                    <h2>
+                        📦 Register Collection
+                    </h2>
+
+                    <label>
+                        Collector ID
+                    </label>
+
+                    <input
+                        id="collectorId"
+                        value="COL-101"
+                        placeholder="COL-101">
+
+
+                    <label>
+                        Customer ID
+                    </label>
+
+                    <input
+                        id="collectorCustomerId"
+                        placeholder="CUS-101">
+
+
+                    <label>
+                        Handover ID
+                    </label>
+
+                    <input
+                        id="collectorHandoverId"
+                        placeholder="HO-XXXXXXXX">
+
+
+                    <label>
+                        Item Type
+                    </label>
+
+                    <input
+                        id="itemType"
+                        placeholder="Laptop / Mobile / Cable">
+
+
+                    <button
+                        class="voice-btn"
+                        onclick="startVoice('itemType')">
+
+                        🎤 Speak Item Type
+
+                    </button>
+
+
+                    <label>
+                        Quantity
+                    </label>
+
+                    <input
+                        id="quantity"
+                        type="number"
+                        value="1">
+
+
+                    <label>
+                        Weight (kg)
+                    </label>
+
+                    <input
+                        id="collectionWeight"
+                        type="number"
+                        step="0.1"
+                        placeholder="10">
+
+
+                    <label>
+                        GPS Location
+                    </label>
+
+                    <input
+                        id="gps"
+                        placeholder="Auto / Manual">
+
+
+                    <label>
+                        Product Photo
+                    </label>
+
+                    <input
+                        id="collectionPhoto"
+                        type="file"
+                        accept="image/*">
+
+
+                    <button
+                        class="primary-btn"
+                        onclick="submitCollection()">
+
+                        Register Collection
+
+                    </button>
+
+                    <div
+                        id="collectorVoiceStatus"
+                        class="voice-status">
+                    </div>
+
+                </div>
+
+
+                <div class="form-card">
+
+                    <h2>
+                        🎁 Collector Rewards
+                    </h2>
+
+                    <div class="reward-box">
+
+                        <div>
+                            Available Points
+                        </div>
+
+                        <div
+                            id="collectorRewardBig"
+                            class="reward-number">
+                            0
+                        </div>
+
+                        <div>
+                            Demo redemption value:
+                            ₹<span
+                            id="collectorCash">
+                            0
+                            </span>
+                        </div>
+
+                        <br>
+
+                        <button
+                            class="redeem-btn"
+                            onclick="redeemDemo('Collector')">
+
+                            Redeem Demo Reward
+
+                        </button>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- ==================================================
+             CUSTOMER DASHBOARD
+        ================================================== -->
+
+        <div
+            id="customerDashboard"
+            class="role-dashboard hidden">
+
+            <h1>Customer Dashboard</h1>
+
+            <p class="hero-subtitle">
+                Responsibly hand over your e-waste
+                and earn rewards.
+            </p>
+
+
+            <div class="card-grid">
+
+                <div class="card">
+
+                    <div class="card-title">
+                        Customer ID
+                    </div>
+
+                    <div class="big-number">
+                        CUS-101
+                    </div>
+
+                </div>
+
+
+                <div class="card">
+
+                    <div class="card-title">
+                        Reward Points
+                    </div>
+
+                    <div
+                        id="customerPoints"
+                        class="big-number green">
+                        0
+                    </div>
+
+                </div>
+
+
+                <div class="card">
+
+                    <div class="card-title">
+                        Handovers
+                    </div>
+
+                    <div
+                        id="customerHandovers"
+                        class="big-number blue">
+                        0
+                    </div>
+
+                </div>
+
+
+                <div class="card">
+
+                    <div class="card-title">
+                        Trust Status
+                    </div>
+
+                    <div class="big-number green">
+                        VERIFIED
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <div class="content-grid">
+
+                <div class="form-card">
+
+                    <h2>
+                        📦 Responsible Handover
+                    </h2>
+
+                    <label>
+                        Customer ID
+                    </label>
+
+                    <input
+                        id="customerId"
+                        value="CUS-101">
+
+
+                    <label>
+                        Phone Number
+                    </label>
+
+                    <input
+                        id="customerPhone"
+                        placeholder="Customer phone">
+
+
+                    <label>
+                        Location
+                    </label>
+
+                    <input
+                        id="customerLocation"
+                        placeholder="Pickup location">
+
+
+                    <label>
+                        Product / E-Waste
+                    </label>
+
+                    <input
+                        id="customerProduct"
+                        placeholder="Laptop, mobile, TV...">
+
+
+                    <button
+                        class="voice-btn"
+                        onclick="startVoice('customerProduct')">
+
+                        🎤 Speak Product
+
+                    </button>
+
+
+                    <label>
+                        Approx. Weight (kg)
+                    </label>
+
+                    <input
+                        id="customerWeight"
+                        type="number"
+                        step="0.1">
+
+
+                    <label>
+                        Collector ID
+                    </label>
+
+                    <input
+                        id="customerCollector"
+                        placeholder="COL-101">
+
+
+                    <label>
+                        Serial / IMEI
+                        (if available)
+                    </label>
+
+                    <input
+                        id="customerSerial"
+                        placeholder="Optional identifier">
+
+
+                    <button
+                        class="primary-btn"
+                        onclick="createCustomerHandover()">
+
+                        Create Handover Request
+
+                    </button>
+
+                </div>
+
+
+                <div class="form-card">
+
+                    <h2>
+                        🛡️ Responsible Handover
+                    </h2>
+
+                    <p style="
+                        color:#9aa6aa;
+                        line-height:1.7;
+                        font-size:14px;
+                    ">
+
+                        Customer information creates a
+                        traceable handover record.
+
+                        <br><br>
+
+                        Product details, location,
+                        collector ID and optional
+                        serial/IMEI information can
+                        help flag suspicious or
+                        duplicate transactions.
+
+                        <br><br>
+
+                        ⚠️ The system flags suspicious
+                        records for review; it does not
+                        independently determine whether
+                        an item is stolen.
+
+                    </p>
+
+                    <br>
+
+                    <div class="reward-box">
+
+                        <div>
+                            Customer Reward Points
+                        </div>
+
+                        <div
+                            id="customerRewardBig"
+                            class="reward-number">
+                            0
+                        </div>
+
+                        <button
+                            class="redeem-btn"
+                            onclick="redeemDemo('Customer')">
+
+                            Redeem Demo Reward
+
+                        </button>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- ==================================================
+             AGGREGATOR DASHBOARD
+        ================================================== -->
+
+        <div
+            id="aggregatorDashboard"
+            class="role-dashboard hidden">
+
+            <h1>Aggregator Dashboard</h1>
+
+            <p class="hero-subtitle">
+                Verify collection pickups and weights.
+            </p>
+
+
+            <div class="card-grid">
+
+                <div class="card">
+
+                    <div class="card-title">
+                        Pending Pickups
+                    </div>
+
+                    <div
+                        id="aggregatorPending"
+                        class="big-number yellow">
+                        0
+                    </div>
+
+                </div>
+
+
+                <div class="card">
+
+                    <div class="card-title">
+                        Verified
+                    </div>
+
+                    <div
+                        id="aggregatorVerified"
+                        class="big-number green">
+                        0
+                    </div>
+
+                </div>
+
+
+                <div class="card">
+
+                    <div class="card-title">
+                        Material Collected
+                    </div>
+
+                    <div
+                        id="aggregatorWeight"
+                        class="big-number blue">
+                        0 kg
+                    </div>
+
+                </div>
+
+
+                <div class="card">
+
+                    <div class="card-title">
+                        Anomalies
+                    </div>
+
+                    <div
+                        class="big-number yellow">
+                        0
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <div class="form-card">
+
+                <h2>
+                    ⚖️ Verify Collection
+                </h2>
+
+                <label>
+                    Collection ID
+                </label>
+
+                <input
+                    id="verifyCollectionId"
+                    placeholder="EW-XXXXXXXX">
+
+
+                <label>
+                    Actual Aggregator Weight (kg)
+                </label>
+
+                <input
+                    id="aggregatorWeight"
+                    type="number"
+                    step="0.1">
+
+
+                <button
+                    class="primary-btn"
+                    onclick="verifyCollection()">
+
+                    Verify Pickup
+
+                </button>
+
+            </div>
+
+
+            <div
+                class="form-card"
+                style="margin-top:20px">
+
+                <h2>
+                    📋 Collection Queue
+                </h2>
+
+                <div
+                    id="aggregatorTable"
+                    class="table-wrap">
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- ==================================================
+             RECYCLER DASHBOARD
+        ================================================== -->
+
+        <div
+            id="recyclerDashboard"
+            class="role-dashboard hidden">
+
+            <h1>Recycler Dashboard</h1>
+
+            <p class="hero-subtitle">
+                Confirm receipt and complete
+                the verification chain.
+            </p>
+
+
+            <div class="card-grid">
+
+                <div class="card">
+
+                    <div class="card-title">
+                        Awaiting Receipt
+                    </div>
+
+                    <div
+                        id="recyclerPending"
+                        class="big-number yellow">
+                        0
+                    </div>
+
+                </div>
+
+
+                <div class="card">
+
+                    <div class="card-title">
+                        EPR Verified
+                    </div>
+
+                    <div
+                        id="recyclerVerified"
+                        class="big-number green">
+                        0
+                    </div>
+
+                </div>
+
+
+                <div class="card">
+
+                    <div class="card-title">
+                        Recycled Weight
+                    </div>
+
+                    <div
+                        id="recyclerWeight"
+                        class="big-number blue">
+                        0 kg
+                    </div>
+
+                </div>
+
+
+                <div class="card">
+
+                    <div class="card-title">
+                        Chain Status
+                    </div>
+
+                    <div class="big-number green">
+                        ACTIVE
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <div class="form-card">
+
+                <h2>
+                    ♻️ Confirm Recycler Receipt
+                </h2>
+
+                <label>
+                    Collection ID
+                </label>
+
+                <input
+                    id="receiveCollectionId"
+                    placeholder="EW-XXXXXXXX">
+
+
+                <label>
+                    Recycler Received Weight (kg)
+                </label>
+
+                <input
+                    id="recyclerWeightInput"
+                    type="number"
+                    step="0.1">
+
+
+                <button
+                    class="primary-btn"
+                    onclick="receiveCollection()">
+
+                    Confirm Receipt & Verify EPR
+
+                </button>
+
+            </div>
+
+        </div>
+
+
+        <!-- ==================================================
+             BRAND / PRO DASHBOARD
+        ================================================== -->
+
+        <div
+            id="brandDashboard"
+            class="role-dashboard hidden">
+
+            <h1>
+                ECOGEN Electronics
+            </h1>
+
+            <p class="hero-subtitle">
+                Brand / PRO — EPR Compliance Dashboard
+            </p>
+
+
+            <div class="card-grid">
+
+                <div class="card">
+
+                    <div class="card-title">
+                        EPR Obligation
+                    </div>
+
+                    <div
+                        id="eprObligation"
+                        class="big-number">
+                        10,000 kg
+                    </div>
+
+                </div>
+
+
+                <div class="card">
+
+                    <div class="card-title">
+                        Verified EPR
+                    </div>
+
+                    <div
+                        id="verifiedEpr"
+                        class="big-number green">
+                        0 kg
+                    </div>
+
+                </div>
+
+
+                <div class="card">
+
+                    <div class="card-title">
+                        Remaining
+                    </div>
+
+                    <div
+                        id="remainingEpr"
+                        class="big-number yellow">
+                        10,000 kg
+                    </div>
+
+                </div>
+
+
+                <div class="card">
+
+                    <div class="card-title">
+                        Compliance
+                    </div>
+
+                    <div
+                        id="compliance"
+                        class="big-number blue">
+                        0%
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <div class="form-card">
+
+                <h2>
+                    📊 EPR Compliance Progress
+                </h2>
+
+                <div class="progress">
+
+                    <div
+                        id="eprProgress"
+                        class="progress-bar">
+                    </div>
+
+                </div>
+
+                <p style="
+                    color:#8c999e;
+                    font-size:13px;
+                ">
+
+                    EPR credit is counted only after
+                    aggregator verification and
+                    recycler confirmation.
+
+                </p>
+
+            </div>
+
+
+            <div
+                class="form-card"
+                style="margin-top:20px">
+
+                <h2>
+                    🔗 Verified EPR Records
+                </h2>
+
+                <div
+                    id="eprTable"
+                    class="table-wrap">
+                </div>
+
+            </div>
+
+
+            <div
+                class="form-card"
+                style="margin-top:20px">
+
+                <h2>
+                    📄 Compliance Report
+                </h2>
+
+                <button
+                    class="primary-btn"
+                    onclick="downloadReport()">
+
+                    Download CPCB-Ready Demo Report
+
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
 
 </section>
-
-
-<!-- ================= BRAND ================= -->
-
-<section id="brand" class="page">
-
-<div class="hero">
-
-<h2>🏢 Brand / PRO Compliance Portal</h2>
-
-<p>
-Track EPR obligations, verified informal-channel collections and
-auditable EPR fulfillment.
-</p>
-
-</div>
-
-
-<div class="grid">
-
-<div class="card">
-<div class="card-label">EPR Obligation</div>
-<div class="card-value" id="eprObligation">0 kg</div>
-</div>
-
-<div class="card">
-<div class="card-label">Verified EPR</div>
-<div class="card-value" id="eprVerified">0 kg</div>
-</div>
-
-<div class="card">
-<div class="card-label">Remaining</div>
-<div class="card-value" id="eprRemaining">0 kg</div>
-</div>
-
-<div class="card">
-<div class="card-label">Compliance</div>
-<div class="card-value" id="compliance">0%</div>
-</div>
-
-</div>
-
-
-<div class="panel">
-
-<h2>📊 EPR Compliance Progress</h2>
-
-<div class="progress">
-
-<div class="progress-bar" id="progressBar"></div>
-
-</div>
-
-<p id="complianceText"
-style="margin-top:10px;color:#789485;font-size:13px;">
-0% completed
-</p>
-
-</div>
-
-
-<div class="panel">
-
-<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;">
-
-<h2>📄 Verified EPR Records</h2>
-
-<button class="btn btn-primary" onclick="generateReport()">
-Download CPCB Report
-</button>
-
-</div>
-
-<div class="table-wrap">
-
-<table>
-
-<thead>
-
-<tr>
-<th>EPR ID</th>
-<th>Collection</th>
-<th>Collector</th>
-<th>Material</th>
-<th>Verified Weight</th>
-<th>Status</th>
-</tr>
-
-</thead>
-
-<tbody id="eprTable"></tbody>
-
-</table>
-
-</div>
-
-</div>
-
-</section>
-
-</main>
-
-</div>
-
-
-<div id="toast"></div>
 
 
 <script>
 
 /* =========================================================
-   IMPORTANT:
-   Relative API path works locally AND on Render.
+   LANGUAGE DATA
+========================================================= */
+
+const languages = [
+
+    {
+        code: "en-IN",
+        flag: "🇬🇧",
+        name: "English",
+        native: "English"
+    },
+
+    {
+        code: "hi-IN",
+        flag: "🇮🇳",
+        name: "Hindi",
+        native: "हिन्दी"
+    },
+
+    {
+        code: "ta-IN",
+        flag: "🇮🇳",
+        name: "Tamil",
+        native: "தமிழ்"
+    },
+
+    {
+        code: "te-IN",
+        flag: "🇮🇳",
+        name: "Telugu",
+        native: "తెలుగు"
+    },
+
+    {
+        code: "kn-IN",
+        flag: "🇮🇳",
+        name: "Kannada",
+        native: "ಕನ್ನಡ"
+    },
+
+    {
+        code: "ml-IN",
+        flag: "🇮🇳",
+        name: "Malayalam",
+        native: "മലയാളം"
+    },
+
+    {
+        code: "bn-IN",
+        flag: "🇮🇳",
+        name: "Bengali",
+        native: "বাংলা"
+    },
+
+    {
+        code: "mr-IN",
+        flag: "🇮🇳",
+        name: "Marathi",
+        native: "मराठी"
+    },
+
+    {
+        code: "gu-IN",
+        flag: "🇮🇳",
+        name: "Gujarati",
+        native: "ગુજરાતી"
+    },
+
+    {
+        code: "pa-IN",
+        flag: "🇮🇳",
+        name: "Punjabi",
+        native: "ਪੰਜਾਬੀ"
+    },
+
+    {
+        code: "or-IN",
+        flag: "🇮🇳",
+        name: "Odia",
+        native: "ଓଡ଼ିଆ"
+    },
+
+    {
+        code: "as-IN",
+        flag: "🇮🇳",
+        name: "Assamese",
+        native: "অসমীয়া"
+    },
+
+    {
+        code: "ur-IN",
+        flag: "🇮🇳",
+        name: "Urdu",
+        native: "اردو"
+    }
+
+];
+
+let selectedLanguage = "en-IN";
+
+let currentRole = "";
+
+
+/* =========================================================
+   LANGUAGE CARDS
+========================================================= */
+
+const languageGrid =
+    document.getElementById("languageGrid");
+
+languages.forEach(lang => {
+
+    const card =
+        document.createElement("div");
+
+    card.className = "language-card";
+
+    if (lang.code === selectedLanguage) {
+        card.classList.add("selected");
+    }
+
+    card.innerHTML = `
+
+        <div class="language-flag">
+            ${lang.flag}
+        </div>
+
+        <div class="language-name">
+            ${lang.name}
+        </div>
+
+        <div class="language-native">
+            ${lang.native}
+        </div>
+
+    `;
+
+    card.onclick = () => {
+
+        selectedLanguage = lang.code;
+
+        document
+            .querySelectorAll(".language-card")
+            .forEach(c =>
+                c.classList.remove("selected")
+            );
+
+        card.classList.add("selected");
+
+        localStorage.setItem(
+            "language",
+            selectedLanguage
+        );
+    };
+
+    languageGrid.appendChild(card);
+
+});
+
+
+/* =========================================================
+   CONTINUE LANGUAGE
+========================================================= */
+
+function continueLanguage() {
+
+    localStorage.setItem(
+        "language",
+        selectedLanguage
+    );
+
+    document
+        .getElementById("languageScreen")
+        .classList.add("hidden");
+
+    document
+        .getElementById("roleScreen")
+        .classList.remove("hidden");
+}
+
+
+/* =========================================================
+   ROLE
+========================================================= */
+
+function openDashboard(role) {
+
+    currentRole = role;
+
+    document
+        .getElementById("roleScreen")
+        .classList.add("hidden");
+
+    document
+        .getElementById("dashboard")
+        .style.display = "block";
+
+    document
+        .querySelectorAll(".role-dashboard")
+        .forEach(d =>
+            d.classList.add("hidden")
+        );
+
+    document
+        .getElementById(
+            role + "Dashboard"
+        )
+        .classList.remove("hidden");
+
+    document
+        .getElementById("currentRole")
+        .textContent =
+        role.toUpperCase();
+
+    refreshDashboard();
+
+}
+
+
+function backToRoles() {
+
+    document
+        .getElementById("dashboard")
+        .style.display = "none";
+
+    document
+        .getElementById("roleScreen")
+        .classList.remove("hidden");
+
+}
+
+
+/* =========================================================
+   API
 ========================================================= */
 
 const API = "";
 
 
 /* =========================================================
-   GLOBAL DATA
+   VOICE RECOGNITION
 ========================================================= */
 
-let latitude = null;
-let longitude = null;
+function startVoice(inputId) {
 
+    const SpeechRecognition =
+        window.SpeechRecognition ||
+        window.webkitSpeechRecognition;
 
-/* =========================================================
-   PAGE SWITCHING
-========================================================= */
+    if (!SpeechRecognition) {
 
-function showPage(page, button){
+        alert(
+            "Speech recognition is not supported in this browser. Try Chrome."
+        );
 
-    document.querySelectorAll(".page").forEach(p=>{
-        p.classList.remove("active");
-    });
-
-    document.getElementById(page).classList.add("active");
-
-    document.querySelectorAll(".nav-btn").forEach(btn=>{
-        btn.classList.remove("active");
-    });
-
-    if(button){
-        button.classList.add("active");
+        return;
     }
 
-    const titles = {
-        collector:"Collector Dashboard",
-        aggregator:"Aggregator Dashboard",
-        recycler:"Recycler Portal",
-        brand:"Brand / PRO Compliance"
+    const recognition =
+        new SpeechRecognition();
+
+    recognition.lang =
+        localStorage.getItem("language")
+        || selectedLanguage;
+
+    recognition.interimResults = false;
+
+    recognition.maxAlternatives = 1;
+
+    recognition.start();
+
+
+    const statusId =
+        currentRole === "collector"
+        ? "collectorVoiceStatus"
+        : null;
+
+    if (statusId) {
+
+        document.getElementById(
+            statusId
+        ).textContent =
+            "🎤 Listening...";
+    }
+
+
+    recognition.onresult = event => {
+
+        const text =
+            event.results[0][0].transcript;
+
+        document.getElementById(
+            inputId
+        ).value = text;
+
+        if (statusId) {
+
+            document.getElementById(
+                statusId
+            ).textContent =
+                "✅ Voice captured";
+        }
     };
 
-    document.getElementById("pageTitle").textContent =
-        titles[page] || "E-Waste EPR Platform";
 
-    refreshAll();
-}
+    recognition.onerror = event => {
 
-
-/* =========================================================
-   TOAST
-========================================================= */
-
-function toast(message){
-
-    const box = document.getElementById("toast");
-
-    box.textContent = message;
-    box.classList.add("show");
-
-    setTimeout(()=>{
-        box.classList.remove("show");
-    },3000);
-}
-
-
-/* =========================================================
-   NETWORK
-========================================================= */
-
-function updateNetwork(){
-
-    const box = document.getElementById("network");
-
-    if(navigator.onLine){
-
-        box.textContent = "🟢 Online";
-        box.classList.remove("offline");
-
-    }else{
-
-        box.textContent = "🟠 Offline";
-        box.classList.add("offline");
-
-    }
-
-    updateOfflineCount();
-}
-
-
-window.addEventListener("online",()=>{
-    updateNetwork();
-    syncOfflineData();
-});
-
-window.addEventListener("offline",updateNetwork);
-
-
-/* =========================================================
-   OFFLINE STORAGE
-========================================================= */
-
-function getOfflineQueue(){
-
-    return JSON.parse(
-        localStorage.getItem("ewasteOfflineQueue") || "[]"
-    );
-
-}
-
-
-function saveOffline(data){
-
-    const queue = getOfflineQueue();
-
-    queue.push(data);
-
-    localStorage.setItem(
-        "ewasteOfflineQueue",
-        JSON.stringify(queue)
-    );
-
-    updateOfflineCount();
-
-    toast("📦 Saved offline. It will sync automatically.");
-}
-
-
-function updateOfflineCount(){
-
-    const queue = getOfflineQueue();
-
-    document.getElementById("offlineCount").textContent =
-        queue.length;
-
-}
-
-
-async function syncOfflineData(){
-
-    if(!navigator.onLine){
-        return;
-    }
-
-    const queue = getOfflineQueue();
-
-    if(queue.length === 0){
-        return;
-    }
-
-    const remaining = [];
-
-    for(const data of queue){
-
-        try{
-
-            const response = await fetch(
-                API + "/api/collection",
-                {
-                    method:"POST",
-                    headers:{
-                        "Content-Type":"application/json"
-                    },
-                    body:JSON.stringify(data)
-                }
-            );
-
-            if(!response.ok){
-                remaining.push(data);
-            }
-
-        }catch(error){
-
-            remaining.push(data);
-
-        }
-
-    }
-
-    localStorage.setItem(
-        "ewasteOfflineQueue",
-        JSON.stringify(remaining)
-    );
-
-    updateOfflineCount();
-
-    if(queue.length !== remaining.length){
-        toast("☁️ Offline collections synced!");
-    }
-
-    refreshAll();
-}
-
-
-/* =========================================================
-   GPS
-========================================================= */
-
-function getGPS(){
-
-    if(!navigator.geolocation){
-
-        toast("GPS is not supported by this browser.");
-        return;
-    }
-
-    navigator.geolocation.getCurrentPosition(
-
-        position=>{
-
-            latitude = position.coords.latitude;
-            longitude = position.coords.longitude;
-
-            document.getElementById("gpsStatus").textContent =
-                `📍 GPS: ${latitude.toFixed(5)}, ${longitude.toFixed(5)}`;
-
-            toast("📍 GPS captured!");
-
-        },
-
-        error=>{
-
-            toast("Unable to capture GPS.");
-
-        }
-
-    );
-
+        console.log(
+            "Voice error:",
+            event.error
+        );
+    };
 }
 
 
@@ -1073,613 +2445,781 @@ function getGPS(){
    IMAGE HASH
 ========================================================= */
 
-async function getImageHash(file){
+async function hashImage(file) {
 
-    if(!file){
-        return null;
+    if (!file) {
+        return "";
     }
 
-    const buffer = await file.arrayBuffer();
+    const buffer =
+        await file.arrayBuffer();
 
     const hashBuffer =
-        await crypto.subtle.digest("SHA-256",buffer);
+        await crypto.subtle.digest(
+            "SHA-256",
+            buffer
+        );
 
     const hashArray =
-        Array.from(new Uint8Array(hashBuffer));
+        Array.from(
+            new Uint8Array(hashBuffer)
+        );
 
     return hashArray
-        .map(b=>b.toString(16).padStart(2,"0"))
+        .map(
+            b =>
+                b.toString(16)
+                 .padStart(2, "0")
+        )
         .join("");
-
 }
 
 
 /* =========================================================
-   COLLECTION SUBMISSION
+   CUSTOMER HANDOVER
 ========================================================= */
 
-document
-.getElementById("collectionForm")
-.addEventListener("submit",async function(event){
+async function createCustomerHandover() {
 
-    event.preventDefault();
+    const data = {
 
-    const collectorId =
-        document.getElementById("collectorId").value.trim();
+        customer_id:
+            document.getElementById(
+                "customerId"
+            ).value,
 
-    const itemType =
-        document.getElementById("itemType").value;
+        phone:
+            document.getElementById(
+                "customerPhone"
+            ).value,
 
-    const quantity =
-        Number(document.getElementById("quantity").value);
+        location:
+            document.getElementById(
+                "customerLocation"
+            ).value,
 
-    const weight =
-        Number(document.getElementById("weight").value);
+        product:
+            document.getElementById(
+                "customerProduct"
+            ).value,
 
-    const photo =
-        document.getElementById("photo").files[0];
+        weight:
+            document.getElementById(
+                "customerWeight"
+            ).value,
 
-    let imageHash = null;
+        collector_id:
+            document.getElementById(
+                "customerCollector"
+            ).value
+    };
 
-    try{
 
-        imageHash = await getImageHash(photo);
+    try {
 
-    }catch(error){
+        const response =
+            await fetch(
+                API + "/api/customer/handover",
+                {
+                    method: "POST",
 
-        console.log("Image hashing unavailable");
+                    headers: {
+                        "Content-Type":
+                            "application/json"
+                    },
+
+                    body:
+                        JSON.stringify(data)
+                }
+            );
+
+        const result =
+            await response.json();
+
+
+        if (!response.ok) {
+
+            alert(
+                result.error ||
+                "Unable to create handover"
+            );
+
+            return;
+        }
+
+
+        alert(
+            "Handover created!\n\nHandover ID: " +
+            result.handover.handover_id
+        );
+
+        refreshDashboard();
 
     }
+
+    catch(error) {
+
+        console.error(error);
+
+        alert(
+            "Server connection failed."
+        );
+    }
+}
+
+
+/* =========================================================
+   COLLECTION
+========================================================= */
+
+async function submitCollection() {
+
+    const photo =
+        document.getElementById(
+            "collectionPhoto"
+        ).files[0];
+
+    const imageHash =
+        await hashImage(photo);
 
 
     const data = {
 
-        collector_id:collectorId,
+        collector_id:
+            document.getElementById(
+                "collectorId"
+            ).value,
 
-        item_type:itemType,
+        customer_id:
+            document.getElementById(
+                "collectorCustomerId"
+            ).value,
 
-        quantity:quantity,
+        handover_id:
+            document.getElementById(
+                "collectorHandoverId"
+            ).value,
 
-        weight:weight,
+        item_type:
+            document.getElementById(
+                "itemType"
+            ).value,
 
-        latitude:latitude,
+        quantity:
+            document.getElementById(
+                "quantity"
+            ).value,
 
-        longitude:longitude,
+        weight:
+            document.getElementById(
+                "collectionWeight"
+            ).value,
 
-        image_hash:imageHash,
+        gps:
+            document.getElementById(
+                "gps"
+            ).value,
 
-        photo:photo ? photo.name : null
-
+        image_hash:
+            imageHash
     };
 
 
-    if(!navigator.onLine){
+    /* Offline queue */
 
-        saveOffline(data);
+    if (!navigator.onLine) {
 
-        this.reset();
+        const queue =
+            JSON.parse(
+                localStorage.getItem(
+                    "offlineQueue"
+                ) || "[]"
+            );
 
-        latitude = null;
-        longitude = null;
+        queue.push(data);
 
-        document.getElementById("gpsStatus").textContent =
-            "GPS not captured";
-
-        return;
-
-    }
-
-
-    try{
-
-        const response = await fetch(
-            API + "/api/collection",
-            {
-                method:"POST",
-                headers:{
-                    "Content-Type":"application/json"
-                },
-                body:JSON.stringify(data)
-            }
+        localStorage.setItem(
+            "offlineQueue",
+            JSON.stringify(queue)
         );
 
+        alert(
+            "You're offline.\nCollection saved and will sync automatically when connection returns."
+        );
 
-        const result = await response.json();
-
-
-        if(result.success){
-
-            toast("✅ Collection recorded!");
-
-            this.reset();
-
-            latitude = null;
-            longitude = null;
-
-            document.getElementById("gpsStatus").textContent =
-                "GPS not captured";
-
-            refreshAll();
-
-        }else{
-
-            toast("❌ " + result.message);
-
-        }
-
-    }catch(error){
-
-        saveOffline(data);
-
-        this.reset();
-
-    }
-
-});
-
-
-/* =========================================================
-   VOICE
-========================================================= */
-
-function startVoice(){
-
-    const SpeechRecognition =
-        window.SpeechRecognition ||
-        window.webkitSpeechRecognition;
-
-    if(!SpeechRecognition){
-
-        toast("Voice recognition is not supported.");
         return;
     }
 
-    const recognition = new SpeechRecognition();
 
-    recognition.lang = "en-IN";
-
-    recognition.onstart = ()=>{
-        toast("🎙️ Listening...");
-    };
-
-    recognition.onresult = event=>{
-
-        const text =
-            event.results[0][0].transcript;
-
-        toast("🎙️ Heard: " + text);
-
-        const lower = text.toLowerCase();
-
-        if(lower.includes("laptop")){
-
-            document.getElementById("itemType").value =
-                "Laptop";
-
-        }else if(lower.includes("mobile")){
-
-            document.getElementById("itemType").value =
-                "Mobile Phone";
-
-        }else if(lower.includes("television") ||
-                 lower.includes("tv")){
-
-            document.getElementById("itemType").value =
-                "Television";
-
-        }else if(lower.includes("battery")){
-
-            document.getElementById("itemType").value =
-                "Battery";
-
-        }
-
-    };
-
-    recognition.start();
-
-}
-
-
-/* =========================================================
-   LOAD COLLECTIONS
-========================================================= */
-
-async function loadCollections(){
-
-    try{
+    try {
 
         const response =
-            await fetch(API + "/api/collections");
+            await fetch(
+                API + "/api/collection",
+                {
+                    method: "POST",
+
+                    headers: {
+                        "Content-Type":
+                            "application/json"
+                    },
+
+                    body:
+                        JSON.stringify(data)
+                }
+            );
 
         const result =
             await response.json();
 
-        if(result.success){
 
-            renderCollections(result.collections);
+        if (!response.ok) {
 
-            renderAggregator(result.collections);
+            alert(
+                result.error ||
+                "Collection failed"
+            );
 
-            renderRecycler(result.collections);
+            return;
+        }
 
-            renderEPR(result.collections);
+
+        alert(
+            "Collection registered!\n\nCollection ID: " +
+            result.collection.collection_id
+        );
+
+        refreshDashboard();
+
+    }
+
+    catch(error) {
+
+        console.error(error);
+
+        alert(
+            "Unable to connect to server."
+        );
+    }
+}
+
+
+/* =========================================================
+   OFFLINE SYNC
+========================================================= */
+
+async function syncOfflineQueue() {
+
+    const queue =
+        JSON.parse(
+            localStorage.getItem(
+                "offlineQueue"
+            ) || "[]"
+        );
+
+
+    if (!queue.length) {
+        return;
+    }
+
+
+    const remaining = [];
+
+
+    for (const data of queue) {
+
+        try {
+
+            const response =
+                await fetch(
+                    API + "/api/collection",
+                    {
+                        method: "POST",
+
+                        headers: {
+                            "Content-Type":
+                                "application/json"
+                        },
+
+                        body:
+                            JSON.stringify(data)
+                    }
+                );
+
+            if (!response.ok) {
+
+                remaining.push(data);
+            }
 
         }
 
-    }catch(error){
+        catch {
 
-        console.log("Unable to load collections.");
+            remaining.push(data);
+        }
+    }
+
+
+    localStorage.setItem(
+        "offlineQueue",
+        JSON.stringify(remaining)
+    );
+
+}
+
+
+window.addEventListener(
+    "online",
+    syncOfflineQueue
+);
+
+
+/* =========================================================
+   AGGREGATOR VERIFY
+========================================================= */
+
+async function verifyCollection() {
+
+    const id =
+        document.getElementById(
+            "verifyCollectionId"
+        ).value;
+
+    const weight =
+        document.getElementById(
+            "aggregatorWeight"
+        ).value;
+
+
+    try {
+
+        const response =
+            await fetch(
+                API +
+                "/api/collection/" +
+                id +
+                "/verify",
+                {
+                    method: "POST",
+
+                    headers: {
+                        "Content-Type":
+                            "application/json"
+                    },
+
+                    body:
+                        JSON.stringify({
+                            aggregator_weight:
+                                weight
+                        })
+                }
+            );
+
+        const result =
+            await response.json();
+
+
+        if (!response.ok) {
+
+            alert(
+                result.error ||
+                "Verification failed"
+            );
+
+            return;
+        }
+
+
+        alert(
+            "✅ Aggregator verification successful!"
+        );
+
+        refreshDashboard();
 
     }
+
+    catch(error) {
+
+        console.error(error);
+
+        alert(
+            "Server error."
+        );
+    }
+}
+
+
+/* =========================================================
+   RECYCLER RECEIVE
+========================================================= */
+
+async function receiveCollection() {
+
+    const id =
+        document.getElementById(
+            "receiveCollectionId"
+        ).value;
+
+    const weight =
+        document.getElementById(
+            "recyclerWeightInput"
+        ).value;
+
+
+    try {
+
+        const response =
+            await fetch(
+                API +
+                "/api/collection/" +
+                id +
+                "/receive",
+                {
+                    method: "POST",
+
+                    headers: {
+                        "Content-Type":
+                            "application/json"
+                    },
+
+                    body:
+                        JSON.stringify({
+                            recycler_weight:
+                                weight
+                        })
+                }
+            );
+
+        const result =
+            await response.json();
+
+
+        if (!response.ok) {
+
+            alert(
+                result.error ||
+                "Recycler confirmation failed"
+            );
+
+            return;
+        }
+
+
+        alert(
+            "🎉 EPR VERIFIED!\n\n" +
+            "Collector points: " +
+            result.rewards.collector_points +
+            "\nCustomer points: " +
+            result.rewards.customer_points
+        );
+
+
+        refreshDashboard();
+
+    }
+
+    catch(error) {
+
+        console.error(error);
+
+        alert(
+            "Server error."
+        );
+    }
+}
+
+
+/* =========================================================
+   DASHBOARD REFRESH
+========================================================= */
+
+async function refreshDashboard() {
+
+    await loadCollections();
+
+    await loadHandovers();
+
+    await loadBrandDashboard();
+
+    await loadRewards();
 
 }
 
 
 /* =========================================================
-   RENDER COLLECTIONS
+   COLLECTIONS
 ========================================================= */
 
-function renderCollections(collections){
+let allCollections = [];
 
-    const table =
-        document.getElementById("collectionTable");
+async function loadCollections() {
 
-    if(collections.length === 0){
+    try {
 
-        table.innerHTML =
-            `<tr>
-                <td colspan="5">No collections yet.</td>
-             </tr>`;
+        const response =
+            await fetch(
+                API + "/api/collections"
+            );
+
+        const result =
+            await response.json();
+
+        allCollections =
+            result.collections || [];
+
+
+        /* Collector */
+
+        const collectorId =
+            document.getElementById(
+                "collectorId"
+            )?.value || "COL-101";
+
+
+        const myCollections =
+            allCollections.filter(
+                c =>
+                    c.collector_id ===
+                    collectorId
+            );
+
+
+        document.getElementById(
+            "collectorCount"
+        ).textContent =
+            myCollections.length;
+
+
+        document.getElementById(
+            "collectorVerified"
+        ).textContent =
+            myCollections.filter(
+                c =>
+                    c.epr_status ===
+                    "EPR_VERIFIED"
+            ).length;
+
+
+        /* Aggregator */
+
+        const verified =
+            allCollections.filter(
+                c =>
+                    c.aggregator_verified
+            );
+
+
+        const pending =
+            allCollections.filter(
+                c =>
+                    !c.aggregator_verified
+            );
+
+
+        document.getElementById(
+            "aggregatorVerified"
+        ).textContent =
+            verified.length;
+
+
+        document.getElementById(
+            "aggregatorPending"
+        ).textContent =
+            pending.length;
+
+
+        document.getElementById(
+            "aggregatorWeight"
+        ).textContent =
+            verified.reduce(
+                (sum, c) =>
+                    sum +
+                    Number(
+                        c.aggregator_weight || 0
+                    ),
+                0
+            ).toFixed(1)
+            + " kg";
+
+
+        /* Recycler */
+
+        const recyclerPending =
+            allCollections.filter(
+                c =>
+                    c.aggregator_verified &&
+                    !c.recycler_received
+            );
+
+
+        const recyclerVerified =
+            allCollections.filter(
+                c =>
+                    c.recycler_received
+            );
+
+
+        document.getElementById(
+            "recyclerPending"
+        ).textContent =
+            recyclerPending.length;
+
+
+        document.getElementById(
+            "recyclerVerified"
+        ).textContent =
+            recyclerVerified.length;
+
+
+        document.getElementById(
+            "recyclerWeight"
+        ).textContent =
+            recyclerVerified.reduce(
+                (sum, c) =>
+                    sum +
+                    Number(
+                        c.recycler_weight || 0
+                    ),
+                0
+            ).toFixed(1)
+            + " kg";
+
+
+        renderAggregatorTable();
+
+    }
+
+    catch(error) {
+
+        console.error(error);
+    }
+}
+
+
+/* =========================================================
+   AGGREGATOR TABLE
+========================================================= */
+
+function renderAggregatorTable() {
+
+    const container =
+        document.getElementById(
+            "aggregatorTable"
+        );
+
+    if (!container) {
+        return;
+    }
+
+
+    if (!allCollections.length) {
+
+        container.innerHTML =
+            "<p style='color:#7f8d92'>No collections yet.</p>";
 
         return;
     }
 
 
-    table.innerHTML =
-        collections
-        .slice()
-        .reverse()
-        .map(c=>{
+    let html = `
 
-            let cls = "submitted";
+        <table>
 
-            if(c.status === "EPR_VERIFIED"){
-                cls = "verified";
-            }
+        <tr>
+            <th>ID</th>
+            <th>Collector</th>
+            <th>Material</th>
+            <th>Weight</th>
+            <th>Status</th>
+        </tr>
 
-            if(c.status === "FLAGGED"){
-                cls = "flagged";
-            }
+    `;
 
-            return `
+
+    allCollections.forEach(c => {
+
+        html += `
+
             <tr>
 
-                <td>${escapeHTML(c.collection_id)}</td>
-
-                <td>${escapeHTML(c.item_type)}</td>
-
-                <td>${c.collector_weight} kg</td>
-
                 <td>
-                    <span class="status ${cls}">
-                        ${escapeHTML(c.status)}
-                    </span>
+                    ${c.collection_id}
                 </td>
 
-                <td>${c.reward_points || 0}</td>
+                <td>
+                    ${c.collector_id}
+                </td>
+
+                <td>
+                    ${c.item_type}
+                </td>
+
+                <td>
+                    ${c.collector_weight} kg
+                </td>
+
+                <td>
+
+                    ${
+                        c.aggregator_verified
+
+                        ?
+
+                        `<span class="status green-bg">
+                            VERIFIED
+                         </span>`
+
+                        :
+
+                        `<span class="status yellow-bg">
+                            PENDING
+                         </span>`
+                    }
+
+                </td>
 
             </tr>
-            `;
 
-        })
-        .join("");
-
-}
-
-
-/* =========================================================
-   AGGREGATOR
-========================================================= */
-
-function renderAggregator(collections){
-
-    const table =
-        document.getElementById("aggregatorTable");
-
-    let pending = 0;
-    let flagged = 0;
-    let weight = 0;
-
-    collections.forEach(c=>{
-
-        weight += Number(c.aggregator_weight || 0);
-
-        if(!c.aggregator_verified){
-            pending++;
-        }
-
-        if(c.status === "FLAGGED"){
-            flagged++;
-        }
+        `;
 
     });
 
 
-    document.getElementById("aggTotal").textContent =
-        collections.length;
+    html += "</table>";
 
-    document.getElementById("aggPending").textContent =
-        pending;
-
-    document.getElementById("aggWeight").textContent =
-        weight.toFixed(2) + " kg";
-
-    document.getElementById("aggFlagged").textContent =
-        flagged;
-
-
-    const pendingCollections =
-        collections.filter(c=>!c.aggregator_verified);
-
-
-    if(pendingCollections.length === 0){
-
-        table.innerHTML =
-            `<tr>
-                <td colspan="5">No pending collections.</td>
-             </tr>`;
-
-        return;
-    }
-
-
-    table.innerHTML =
-        pendingCollections.map(c=>{
-
-            return `
-            <tr>
-
-                <td>${escapeHTML(c.collection_id)}</td>
-
-                <td>${escapeHTML(c.collector_id)}</td>
-
-                <td>${escapeHTML(c.item_type)}</td>
-
-                <td>${c.collector_weight} kg</td>
-
-                <td>
-
-                    <button
-                        class="btn btn-primary"
-                        onclick="verifyAggregator('${c.collection_id}')">
-
-                        Verify
-
-                    </button>
-
-                </td>
-
-            </tr>
-            `;
-
-        }).join("");
-
-}
-
-
-async function verifyAggregator(id){
-
-    const weight =
-        prompt("Enter aggregator verified weight (kg):");
-
-    if(weight === null){
-        return;
-    }
-
-    if(!weight || Number(weight) <= 0){
-
-        toast("Enter a valid weight.");
-        return;
-
-    }
-
-
-    try{
-
-        const response =
-            await fetch(
-                API + "/api/collection/" +
-                encodeURIComponent(id) +
-                "/verify",
-                {
-                    method:"POST",
-                    headers:{
-                        "Content-Type":"application/json"
-                    },
-                    body:JSON.stringify({
-                        weight:Number(weight)
-                    })
-                }
-            );
-
-
-        const result =
-            await response.json();
-
-
-        if(result.success){
-
-            toast("✅ Aggregator verification completed!");
-
-            refreshAll();
-
-        }else{
-
-            toast("❌ " + result.message);
-
-        }
-
-    }catch(error){
-
-        toast("❌ Verification failed.");
-
-    }
-
+    container.innerHTML = html;
 }
 
 
 /* =========================================================
-   RECYCLER
+   CUSTOMER HANDOVERS
 ========================================================= */
 
-function renderRecycler(collections){
+async function loadHandovers() {
 
-    const table =
-        document.getElementById("recyclerTable");
-
-    const ready =
-        collections.filter(c=>
-            c.aggregator_verified &&
-            !c.recycler_confirmed
-        );
-
-
-    if(ready.length === 0){
-
-        table.innerHTML =
-            `<tr>
-                <td colspan="5">
-                    No material waiting for recycler receipt.
-                </td>
-             </tr>`;
-
-        return;
-    }
-
-
-    table.innerHTML =
-        ready.map(c=>{
-
-            return `
-            <tr>
-
-                <td>${escapeHTML(c.collection_id)}</td>
-
-                <td>${escapeHTML(c.item_type)}</td>
-
-                <td>${c.aggregator_weight} kg</td>
-
-                <td>
-                    <input
-                        id="recycler-${c.collection_id}"
-                        type="number"
-                        min="0.1"
-                        step="0.1"
-                        placeholder="kg"
-                        style="
-                            width:100px;
-                            padding:8px;
-                            background:#09150f;
-                            color:white;
-                            border:1px solid #274936;
-                            border-radius:7px;
-                        "
-                    >
-                </td>
-
-                <td>
-
-                    <button
-                        class="btn btn-primary"
-                        onclick="confirmRecycler('${c.collection_id}')">
-
-                        Confirm Receipt
-
-                    </button>
-
-                </td>
-
-            </tr>
-            `;
-
-        }).join("");
-
-}
-
-
-async function confirmRecycler(id){
-
-    const input =
-        document.getElementById(
-            "recycler-" + id
-        );
-
-    const weight =
-        Number(input.value);
-
-
-    if(!weight || weight <= 0){
-
-        toast("Enter recycler receipt weight.");
-        return;
-
-    }
-
-
-    try{
+    try {
 
         const response =
             await fetch(
-                API + "/api/collection/" +
-                encodeURIComponent(id) +
-                "/receive",
-                {
-                    method:"POST",
-                    headers:{
-                        "Content-Type":"application/json"
-                    },
-                    body:JSON.stringify({
-                        weight:weight
-                    })
-                }
+                API +
+                "/api/customer/handovers"
             );
-
 
         const result =
             await response.json();
 
 
-        if(result.success){
-
-            if(result.collection.epr_verified){
-
-                toast(
-                    "🎉 EPR VERIFIED! Credit generated."
-                );
-
-            }else{
-
-                toast(
-                    "⚠️ Collection flagged for verification."
-                );
-
-            }
-
-            refreshAll();
-
-        }else{
-
-            toast("❌ " + result.message);
-
-        }
-
-    }catch(error){
-
-        toast("❌ Recycler confirmation failed.");
+        document.getElementById(
+            "customerHandovers"
+        ).textContent =
+            result.count || 0;
 
     }
 
+    catch(error) {
+
+        console.error(error);
+    }
 }
 
 
@@ -1687,111 +3227,131 @@ async function confirmRecycler(id){
    BRAND DASHBOARD
 ========================================================= */
 
-async function loadDashboard(){
+async function loadBrandDashboard() {
 
-    try{
+    try {
 
         const response =
-            await fetch(API + "/api/dashboard");
+            await fetch(
+                API + "/api/dashboard"
+            );
 
-        const result =
+        const data =
             await response.json();
 
-        if(!result.success){
-            return;
-        }
 
-        const d = result.dashboard;
-
-
-        document.getElementById("eprObligation").textContent =
-            d.epr_obligation + " kg";
-
-        document.getElementById("eprVerified").textContent =
-            d.verified_epr_weight + " kg";
-
-        document.getElementById("eprRemaining").textContent =
-            d.epr_remaining + " kg";
-
-        document.getElementById("compliance").textContent =
-            d.compliance_percentage + "%";
-
-        document.getElementById("progressBar").style.width =
-            Math.min(d.compliance_percentage,100) + "%";
-
-        document.getElementById("complianceText").textContent =
-            d.compliance_percentage +
-            "% of EPR obligation fulfilled.";
+        document.getElementById(
+            "eprObligation"
+        ).textContent =
+            Number(
+                data.epr_obligation_kg
+            ).toLocaleString()
+            + " kg";
 
 
-        document.getElementById("collectorCollections").textContent =
-            d.total_collections;
-
-        document.getElementById("collectorPoints").textContent =
-            d.reward_points;
-
-
-        document.getElementById("verifiedCollections").textContent =
-            d.verified_epr_weight > 0
-            ? "✓"
-            : "0";
+        document.getElementById(
+            "verifiedEpr"
+        ).textContent =
+            Number(
+                data.verified_epr_kg
+            ).toFixed(1)
+            + " kg";
 
 
-    }catch(error){
+        document.getElementById(
+            "remainingEpr"
+        ).textContent =
+            Number(
+                data.remaining_kg
+            ).toFixed(1)
+            + " kg";
 
-        console.log("Dashboard unavailable.");
+
+        document.getElementById(
+            "compliance"
+        ).textContent =
+            data.compliance_percentage
+            + "%";
+
+
+        document.getElementById(
+            "eprProgress"
+        ).style.width =
+            Math.min(
+                data.compliance_percentage,
+                100
+            ) + "%";
+
+
+        renderEprTable(
+            data.verified_records
+        );
 
     }
 
+    catch(error) {
+
+        console.error(error);
+    }
 }
 
 
 /* =========================================================
-   EPR RECORDS
+   EPR TABLE
 ========================================================= */
 
-function renderEPR(collections){
+function renderEprTable(records) {
 
-    const table =
-        document.getElementById("eprTable");
+    const container =
+        document.getElementById(
+            "eprTable"
+        );
 
-    const verified =
-        collections.filter(c=>c.epr_verified);
+    if (!container) {
+        return;
+    }
 
 
-    if(verified.length === 0){
+    if (!records.length) {
 
-        table.innerHTML =
-            `<tr>
-                <td colspan="6">
-                    No verified EPR records yet.
-                </td>
-             </tr>`;
+        container.innerHTML =
+            "<p style='color:#7f8d92'>No verified EPR records yet.</p>";
 
         return;
     }
 
 
-    table.innerHTML =
-        verified.map(c=>{
+    let html = `
 
-            return `
+        <table>
+
+        <tr>
+            <th>EPR ID</th>
+            <th>Collector</th>
+            <th>Customer</th>
+            <th>Weight</th>
+            <th>Status</th>
+        </tr>
+
+    `;
+
+
+    records.forEach(c => {
+
+        html += `
+
             <tr>
 
                 <td>
-                    EPR-${escapeHTML(c.collection_id)}
+                    EPR-${c.collection_id}
                 </td>
 
                 <td>
-                    ${escapeHTML(c.collection_id)}
+                    ${c.collector_id}
                 </td>
 
                 <td>
-                    ${escapeHTML(c.collector_id)}
-                </td>
-
-                <td>
-                    ${escapeHTML(c.item_type)}
+                    ${c.customer_id || "-"}
                 </td>
 
                 <td>
@@ -1799,108 +3359,205 @@ function renderEPR(collections){
                 </td>
 
                 <td>
-                    <span class="status verified">
-                        VERIFIED
+
+                    <span class="status green-bg">
+                        EPR VERIFIED
                     </span>
+
                 </td>
 
             </tr>
-            `;
 
-        }).join("");
+        `;
 
+    });
+
+
+    html += "</table>";
+
+    container.innerHTML = html;
 }
 
 
 /* =========================================================
-   CPCB-STYLE REPORT
+   REWARDS
 ========================================================= */
 
-async function generateReport(){
+async function loadRewards() {
 
-    try{
+    try {
+
+        const collectorId =
+            document.getElementById(
+                "collectorId"
+            )?.value || "COL-101";
+
+
+        const customerId =
+            document.getElementById(
+                "customerId"
+            )?.value || "CUS-101";
+
+
+        const collectorResponse =
+            await fetch(
+                API +
+                "/api/rewards/" +
+                collectorId
+            );
+
+        const collector =
+            await collectorResponse.json();
+
+
+        const customerResponse =
+            await fetch(
+                API +
+                "/api/rewards/" +
+                customerId
+            );
+
+        const customer =
+            await customerResponse.json();
+
+
+        document.getElementById(
+            "collectorPoints"
+        ).textContent =
+            collector.points;
+
+
+        document.getElementById(
+            "collectorRewardBig"
+        ).textContent =
+            collector.points;
+
+
+        document.getElementById(
+            "collectorCash"
+        ).textContent =
+            Number(
+                collector.demo_cash_value
+            ).toFixed(2);
+
+
+        document.getElementById(
+            "customerPoints"
+        ).textContent =
+            customer.points;
+
+
+        document.getElementById(
+            "customerRewardBig"
+        ).textContent =
+            customer.points;
+
+    }
+
+    catch(error) {
+
+        console.error(error);
+    }
+}
+
+
+/* =========================================================
+   DEMO REDEMPTION
+========================================================= */
+
+function redeemDemo(role) {
+
+    alert(
+        "🎁 Demo Redemption\n\n" +
+        role +
+        " reward redemption selected.\n\n" +
+        "In the hackathon prototype this is simulated. " +
+        "A production system would connect this wallet to an approved payment/reward provider."
+    );
+}
+
+
+/* =========================================================
+   CPCB-READY DEMO REPORT
+========================================================= */
+
+async function downloadReport() {
+
+    try {
 
         const response =
-            await fetch(API + "/api/collections");
+            await fetch(
+                API + "/api/dashboard"
+            );
 
-        const result =
+        const data =
             await response.json();
 
-        if(!result.success){
-            return;
-        }
 
+        let report =
 
-        const collections =
-            result.collections;
-
-
-        const verified =
-            collections.filter(c=>c.epr_verified);
-
-
-        let report = "";
-
-        report +=
 `E-WASTE EPR COMPLIANCE REPORT
-========================================
+================================
 
-Platform:
-E-Waste EPR Platform
+Brand / PRO:
+ECOGEN Electronics
 
-Generated:
-${new Date().toLocaleString()}
+EPR Obligation:
+${data.epr_obligation_kg} kg
 
-Total Collections:
-${collections.length}
+Verified EPR:
+${data.verified_epr_kg} kg
 
-Verified EPR Collections:
-${verified.length}
+Remaining:
+${data.remaining_kg} kg
 
-`;
+Compliance:
+${data.compliance_percentage}%
 
-        let totalWeight = 0;
-
-
-        verified.forEach(c=>{
-
-            totalWeight +=
-                Number(c.recycler_weight || 0);
-
-        });
-
-
-        report +=
-`Verified EPR Weight:
-${totalWeight.toFixed(2)} kg
-
-Verification Chain:
-Collector → Aggregator → Recycler → EPR
-
-Records
-----------------------------------------
+VERIFIED RECORDS
+================================
 
 `;
 
 
-        verified.forEach(c=>{
+        data.verified_records.forEach(
+            (record, index) => {
 
-            report +=
-`EPR ID: EPR-${c.collection_id}
-Collector: ${c.collector_id}
-Material: ${c.item_type}
-Verified Weight: ${c.recycler_weight} kg
-Status: VERIFIED
-----------------------------------------
+                report +=
+
+`${index + 1}.
+Collection ID:
+${record.collection_id}
+
+Collector:
+${record.collector_id}
+
+Customer:
+${record.customer_id || "-"}
+
+Material:
+${record.item_type}
+
+Verified Weight:
+${record.recycler_weight} kg
+
+Status:
+EPR VERIFIED
+
+--------------------------------
 `;
 
-        });
+            }
+        );
 
 
         const blob =
             new Blob(
                 [report],
-                {type:"text/plain"}
+                {
+                    type:
+                        "text/plain"
+                }
             );
 
 
@@ -1914,113 +3571,69 @@ Status: VERIFIED
         a.href = url;
 
         a.download =
-            "e-waste-epr-compliance-report.txt";
+            "ECOGEN_EPR_Report.txt";
 
         a.click();
 
         URL.revokeObjectURL(url);
 
-        toast("📄 Compliance report generated!");
-
-    }catch(error){
-
-        toast("Unable to generate report.");
-
     }
 
+    catch(error) {
+
+        console.error(error);
+
+        alert(
+            "Unable to generate report."
+        );
+    }
 }
 
 
 /* =========================================================
-   COLLECTOR REWARDS
+   BACKGROUND PARTICLES
 ========================================================= */
 
-async function loadRewards(){
+const particleContainer =
+    document.getElementById(
+        "particles"
+    );
 
-    const collector =
-        document.getElementById("collectorId").value.trim();
 
-    if(!collector){
-        return;
-    }
+for (
+    let i = 0;
+    i < 45;
+    i++
+) {
 
-    try{
+    const particle =
+        document.createElement("div");
 
-        const response =
-            await fetch(
-                API +
-                "/api/rewards/" +
-                encodeURIComponent(collector)
-            );
+    particle.className =
+        "particle";
 
-        const result =
-            await response.json();
+    particle.style.left =
+        Math.random() * 100 + "%";
 
-        if(result.success){
+    particle.style.animationDuration =
+        (8 + Math.random() * 15)
+        + "s";
 
-            document.getElementById("collectorPoints").textContent =
-                result.reward_points;
+    particle.style.animationDelay =
+        (-Math.random() * 15)
+        + "s";
 
-            document.getElementById("verifiedCollections").textContent =
-                result.verified_collections;
-
-        }
-
-    }catch(error){
-
-        console.log("Rewards unavailable.");
-
-    }
-
+    particleContainer.appendChild(
+        particle
+    );
 }
 
 
 /* =========================================================
-   SECURITY / HTML ESCAPE
+   STARTUP
 ========================================================= */
 
-function escapeHTML(value){
-
-    if(value === null || value === undefined){
-        return "";
-    }
-
-    return String(value)
-        .replaceAll("&","&amp;")
-        .replaceAll("<","&lt;")
-        .replaceAll(">","&gt;")
-        .replaceAll('"',"&quot;")
-        .replaceAll("'","&#039;");
-
-}
-
-
-/* =========================================================
-   REFRESH EVERYTHING
-========================================================= */
-
-async function refreshAll(){
-
-    updateNetwork();
-
-    await loadCollections();
-
-    await loadDashboard();
-
-    loadRewards();
-
-}
-
-
-/* =========================================================
-   START
-========================================================= */
-
-updateNetwork();
-
-refreshAll();
-
-syncOfflineData();
+syncOfflineQueue();
 
 </script>
 
