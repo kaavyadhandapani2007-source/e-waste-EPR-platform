@@ -1,8 +1,11 @@
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
-from datetime import datetime
+from datetime import datetime, timedelta
 import hashlib
 import uuid
+import os
+import jwt
+from werkzeug.security import generate_password_hash, check_password_hash
 
 
 # ============================================================
@@ -22,6 +25,11 @@ CORS(app)
 collections = {}
 handovers = {}
 rewards = {}
+users = {}
+
+JWT_SECRET = os.environ.get("JWT_SECRET", "e-waste-nexus-demo-secret-change-me")
+JWT_ALGORITHM = "HS256"
+JWT_EXPIRY_HOURS = 24
 
 EPR_OBLIGATION_KG = 10000.0
 
@@ -112,6 +120,145 @@ def api_status():
         "collections": len(collections),
         "handovers": len(handovers)
     })
+
+
+
+# ============================================================
+# AUTHENTICATION
+# ============================================================
+
+ALLOWED_ROLES = {
+    "USER",
+    "COLLECTOR",
+    "AGGREGATOR",
+    "RECYCLER",
+    "BRAND_PRO",
+}
+
+
+def create_access_token(user_id):
+    payload = {
+        "user_id": user_id,
+        "exp": datetime.utcnow() + timedelta(hours=JWT_EXPIRY_HOURS),
+    }
+    return jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
+
+
+def public_user(user):
+    """Return user data that is safe to send to the frontend."""
+    return {
+        "user_id": user["user_id"],
+        "full_name": user["full_name"],
+        "email": user["email"],
+        "phone": user["phone"],
+        "role": user["role"],
+        "language": user["language"],
+        "organization_name": user["organization_name"],
+        "brand_name": user["brand_name"],
+        "address": user["address"],
+        "city": user["city"],
+        "state": user["state"],
+        "pincode": user["pincode"],
+        "created_at": user["created_at"],
+    }
+
+
+@app.route("/api/auth/register", methods=["POST"])
+def register():
+    data = get_json()
+
+    full_name = str(data.get("full_name", "")).strip()
+    email = str(data.get("email", "")).strip().lower()
+    phone = str(data.get("phone", "")).strip()
+    password = str(data.get("password", ""))
+    role = str(data.get("role", "")).strip().upper()
+    language = str(data.get("language", "en-IN")).strip()
+    organization_name = str(data.get("organization_name", "")).strip()
+    brand_name = str(data.get("brand_name", "")).strip()
+    address = str(data.get("address", "")).strip()
+    city = str(data.get("city", "")).strip()
+    state = str(data.get("state", "")).strip()
+    pincode = str(data.get("pincode", "")).strip()
+
+    if not full_name:
+        return jsonify({"success": False, "message": "Full name is required"}), 400
+
+    if not email or "@" not in email:
+        return jsonify({"success": False, "message": "A valid email is required"}), 400
+
+    if len(password) < 6:
+        return jsonify({
+            "success": False,
+            "message": "Password must be at least 6 characters"
+        }), 400
+
+    if role not in ALLOWED_ROLES:
+        return jsonify({"success": False, "message": "Invalid role selected"}), 400
+
+    if email in users:
+        return jsonify({
+            "success": False,
+            "message": "An account with this email already exists"
+        }), 409
+
+    user_id = generate_id("USR")
+
+    user = {
+        "user_id": user_id,
+        "full_name": full_name,
+        "email": email,
+        "phone": phone,
+        "password_hash": generate_password_hash(password),
+        "role": role,
+        "language": language,
+        "organization_name": organization_name,
+        "brand_name": brand_name,
+        "address": address,
+        "city": city,
+        "state": state,
+        "pincode": pincode,
+        "created_at": current_time(),
+    }
+
+    users[email] = user
+
+    return jsonify({
+        "success": True,
+        "message": "Account created successfully",
+        "user": public_user(user),
+    }), 201
+
+
+@app.route("/api/auth/login", methods=["POST"])
+def login():
+    data = get_json()
+
+    email = str(data.get("email", "")).strip().lower()
+    password = str(data.get("password", ""))
+    role = str(data.get("role", "")).strip().upper()
+
+    user = users.get(email)
+
+    if not user or not check_password_hash(user["password_hash"], password):
+        return jsonify({
+            "success": False,
+            "message": "Invalid email or password"
+        }), 401
+
+    if role and user["role"] != role:
+        return jsonify({
+            "success": False,
+            "message": "Selected role does not match this account"
+        }), 403
+
+    token = create_access_token(user["user_id"])
+
+    return jsonify({
+        "success": True,
+        "message": "Login successful",
+        "token": token,
+        "user": public_user(user),
+    }), 200
 
 
 # ============================================================
