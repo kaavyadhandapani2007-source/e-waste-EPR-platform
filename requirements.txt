@@ -1,6 +1,6 @@
 Flask==3.1.2
 Flask-Cors==6.0.1
-Flask-SQLA1chemy
+Flask-SQLA1chemy=3.1.1
 Flask-JWT-Extended==4.7.1
 SQLAchemy==2.0.43
 psycopg2-binary==2.9.10
