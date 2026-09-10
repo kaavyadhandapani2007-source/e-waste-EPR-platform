@@ -262,6 +262,67 @@ def login():
 
 
 # ============================================================
+# CURRENT AUTHENTICATED USER
+# ============================================================
+
+@app.route("/api/auth/me", methods=["GET"])
+def auth_me():
+    """Return the currently authenticated user from the JWT token."""
+
+    auth_header = request.headers.get("Authorization", "")
+
+    if not auth_header.startswith("Bearer "):
+        return jsonify({
+            "success": False,
+            "message": "Authentication token is required"
+        }), 401
+
+    token = auth_header.split(" ", 1)[1].strip()
+
+    if not token:
+        return jsonify({
+            "success": False,
+            "message": "Authentication token is required"
+        }), 401
+
+    try:
+        payload = jwt.decode(
+            token,
+            JWT_SECRET,
+            algorithms=[JWT_ALGORITHM]
+        )
+    except jwt.ExpiredSignatureError:
+        return jsonify({
+            "success": False,
+            "message": "Authentication token has expired"
+        }), 401
+    except jwt.InvalidTokenError:
+        return jsonify({
+            "success": False,
+            "message": "Invalid authentication token"
+        }), 401
+
+    user_id = payload.get("user_id")
+
+    user = next(
+        (item for item in users.values()
+         if item.get("user_id") == user_id),
+        None
+    )
+
+    if not user:
+        return jsonify({
+            "success": False,
+            "message": "User account not found"
+        }), 401
+
+    return jsonify({
+        "success": True,
+        "user": public_user(user)
+    }), 200
+
+
+# ============================================================
 # CUSTOMER HANDOVER
 # ============================================================
 
